@@ -69,6 +69,10 @@ crashlytics-build.properties
 [Aa]ssets/AWSIM/Externals/*
 ![Aa]ssets/AWSIM/Externals/.gitkeep
 
+# ignore the folder for asset ModularLowpoly (it's meta file will be kept thtough rule above !/[Aa]ssets/**/*.meta)
+[Aa]ssets/ModularLowpolyStreetsFree/**
+![Aa]ssets/ModularLowpolyStreetsFree/**/*.meta
+
 # JetBrains
 .idea/
 
