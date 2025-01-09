@@ -12,8 +12,14 @@ _AWSIM-Labs-BFH_ was created as part of a project in the curriculum of the Bache
 >For a better understanding of this documentation, please consult the [glossary](glossary.md).
 
 ## Content
+This documentation is distributed into multiple files.
+
+In this file:
 - [Scope and Aim of AWSIM-Labs-BFH](#scope-and-aim-of-awsim-labs-bfh)
 - [Project Maintainance](#project-maintainance)
+
+In additional files:
+- [Glossary](glossary.md)
 
 ## Scope and Aim of AWSIM-Labs-BFH
 
