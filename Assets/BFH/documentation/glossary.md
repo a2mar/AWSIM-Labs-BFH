@@ -1,0 +1,4 @@
+- NPC vehicles
+- NPC pedestrians
+- HD map
+- Digital Twin Simulation
