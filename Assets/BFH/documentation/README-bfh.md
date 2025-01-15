@@ -25,7 +25,7 @@ In this file:
 - [System Requirements](#system-requirements)
 
 In additional files:
-- [Installation of Autoware](autoware-intallation.md)
+- [Installation of Autoware](autoware-installation.md)
 - [Installation of AWSIM-Labs-BFH](AWSIM-Labs-BFH-Unity-installation.md)
 - [Glossary](glossary.md)
 
