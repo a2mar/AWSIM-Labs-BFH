@@ -152,7 +152,10 @@ For troubleshooting, visit the provided link in the official guide.
 Follow the [instructions for network configuration](https://autowarefoundation.github.io/autoware-documentation/main/installation/additional-settings-for-developers/network-configuration/) for a single computer setup.
 Make sure to follow the instructions to make the settings permanent.
 
-### 3 Update the Autoware workspace
+### 3 Test the Autoware workspace
+A good way to test your _Autoware_ workspace is to run the [`Planning Simulation`](https://autowarefoundation.github.io/autoware-documentation/main/tutorials/ad-hoc-simulation/planning-simulation/), as instructed here.
+
+### 4 Update the Autoware workspace
 
 Sometimes a workspace needs to be update, e.g. when the workspace needs to be updated to the state of a coworkers workspace, or fetch the newest
 issues from a repository, described [here](https://autowarefoundation.github.io/autoware-documentation/main/installation/autoware/source-installation/#how-to-update-a-workspace)
