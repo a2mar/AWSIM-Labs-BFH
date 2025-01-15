@@ -1,6 +1,9 @@
 # AWSIM Labs BFH
 
-Version: 2025.0.0
+### Edit History
+| Date | Description | Author|
+|------|-------------|-------|
+|17.01.2025| Created Initial Version of the documentation| Ammar Hammad|
 
 This project is a fork of the [_AWSIM Labs_](https://github.com/autowarefoundation/AWSIM-Labs) simulator for [_Autoware_](https://autoware.org/) created in and with [_Unity_](www.unity.com). 
 

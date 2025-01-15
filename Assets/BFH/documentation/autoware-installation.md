@@ -2,6 +2,12 @@
 
 This guide provides a streamlined overview to assist in the installation and configuration of Autoware on Ubuntu 22.04. Follow the [official documentation](https://autowarefoundation.github.io/autoware-documentation/main/installation/autoware/source-installation/) closely for further details.
 
+>
+>**Note:**
+>This guide was last edited for the _Autoware_ version compatible with _ROS 2 Humble_ and _Ubuntu 22.04._.
+>Review the [Edit History](README-bfh.md) for further information.
+>
+
 ## About Autoware and ROS2
 Autoware is an open-source software stack designed for autonomous driving, 
 leveraging _ROS 2 Humble_, a middleware framework built for robotics applications.
@@ -67,3 +73,8 @@ For _GitHub_ users:
 Follow [this guide](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
 
 ## Autoware Source Installation
+Please open up a browser window with the [official guide](https://autowarefoundation.github.io/autoware-documentation/main/installation/autoware/source-installation/#how-to-set-up-a-development-environment) in assistance to the notes.
+
+There is an optional graphical user interface for building _Autoware_, this document will guide through the creation of a workspace with classical command line tools.
+
+### 1. Setting up a development environment
