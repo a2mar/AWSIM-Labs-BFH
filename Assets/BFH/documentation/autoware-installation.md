@@ -3,7 +3,14 @@
 This guide provides a streamlined overview to assist in the installation and configuration of Autoware on Ubuntu 22.04. Follow the [official documentation](https://autowarefoundation.github.io/autoware-documentation/main/installation/autoware/source-installation/) closely for further details.
 
 ## About Autoware and ROS2
-Autoware is an open-source software stack designed for autonomous driving, leveraging _ROS 2 Humble_, a middleware framework built for robotics applications. _ROS_ (_Robot Operating System_) is not an operating system in the traditional sense but a collection of libraries and tools that facilitate the development of robotic applications, providing functionality like hardware abstraction, device drivers, and communication between processes. _ROS2_, the second generation of _ROS_, is designed to be more robust, scalable, and suitable for real-time systems, making it ideal for complex systems like autonomous vehicles. _Autoware_ is specifically built with _ROS 2 Humble_, which is designed to run on _Ubuntu 22.04_, a widely used Linux distribution.
+Autoware is an open-source software stack designed for autonomous driving, 
+leveraging _ROS 2 Humble_, a middleware framework built for robotics applications.
+ _ROS_ (_Robot Operating System_) is not an operating system in the traditional 
+ sense but a collection of libraries and tools that facilitate the development of robotic applications,
+  providing functionality like hardware abstraction, 
+  device drivers, and communication between processes. 
+  _ROS2_, the second generation of _ROS_, is designed to be more 
+  robust, scalable, and suitable for real-time systems, making it ideal for complex systems like autonomous vehicles. _Autoware_ is specifically built with _ROS 2 Humble_, which is designed to run on _Ubuntu 22.04_, a widely used Linux distribution.
 
 Because _ROS2_ depends heavily on the underlying operating system, any changes or inconsistencies in the base OS can lead to compatibility issues. This sensitivity to the OS is why _Autoware_ is tightly aligned with Ubuntu 22.04 to guarantee stability and predictable performance. _ROS 2 Humble_ provides essential tools like _DDS_ (_Data Distribution Service_) for communication and packages that enable sensor integration, mapping, localization, and path planning — all core features for autonomous vehicles. Autoware combines these capabilities into a cohesive stack tailored for self-driving tasks, ensuring a modular and flexible architecture for developers and researchers.
 
