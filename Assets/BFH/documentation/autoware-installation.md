@@ -78,3 +78,100 @@ Please open up a browser window with the [official guide](https://autowarefounda
 There is an optional graphical user interface for building _Autoware_, this document will guide through the creation of a workspace with classical command line tools.
 
 ### 1. Setting up a development environment
+In this step, all the dependencies used for Autoware will be installed. Some of them, like _ROS 2_, have been installed manually (for easier troubleshooting).
+
+#### 1.1 Clone `autowarefoundation/autoware` repository
+In your prefered location, clone `autowarefoundation/autoware` and move to the directory.
+```sh
+git clone https://github.com/autowarefoundation/autoware.git
+cd autoware
+```
+
+#### 1.2 Run _Ansible_ script
+Run the _Ansible_ script called `setup-dev-env.sh` to automatically isntall all missing dependencies.
+
+```sh
+./setup-dev-env.sh
+```
+Ansible will ask you for your sudo password, if you haven't provided it already.
+
+The last lines of the output will look similar to this:
+
+~~~
+PLAY RECAP ******************************************************************************************
+localhost                  : ok=151  changed=65   unreachable=0    failed=0    skipped=5    rescued=0    ignored=0   
+~~~
+As long as none of the _Ansible Playbook_'s tasks have failed, everything is fine.
+
+If you run into any trouble, consult the troubleshooting page linked to in the official guide.
+
+### 2 Set up a workspace
+A workspace is a very central concept when developing with _ROS2_.
+Workspaces leverage the modularization of distributed systems by allowing the projects source code to be split into multiple projects with their own workspaces. The source code of the workspaces is than connected via `overlay`, which is done by `sourcing` them. Exploring the concept of workspaces in more depth would be out of the scope of this project.
+
+#### 2.1 Clone Repositories
+
+Create a `src` directory and clone the repositories into it. The included workspaces are constructed by `vcstool`:
+
+```sh
+cd autoware
+mkdir src
+vcs import src < autoware.repos
+```
+
+#### 2.2 install dependend ROS packages
+Directly from the guide:<br>
+_"Autoware requires some_ ROS 2 _packages in addition to the core components. The tool `rosdep` allows an automatic search and installation of such dependencies."_
+
+Source the _ROS 2_ distribution:
+```sh
+source /opt/ros/humble/setup.bash
+```
+Make sure all previously installed ROS packages are all up to date, before you move on:
+
+```sh
+sudo apt update && sudo apt upgrade
+```
+Update `rosdep` and install the missing _ROS2_ packages _Autoware_ requires:
+
+```sh
+rosdep update
+rosdep install -y --from-paths src --ignore-src --rosdistro $ROS_DISTRO
+```
+#### 2.3 Optional: setup `cchache`:
+In order to speed up consecutive builds, install and setup `cchache` with [this guide](https://autowarefoundation.github.io/autoware-documentation/main/how-to-guides/others/advanced-usage-of-colcon/#using-ccache-to-speed-up-recompilation).
+
+#### 2.4 Build the workspace
+Use the `colcon` command to build the workspace with the following command:
+```sh
+colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+```
+For troubleshooting, visit the provided link in the official guide.
+
+#### 2.5 Make Network configuration
+Follow the [instructions for network configuration](https://autowarefoundation.github.io/autoware-documentation/main/installation/additional-settings-for-developers/network-configuration/) for a single computer setup.
+Make sure to follow the instructions to make the settings permanent.
+
+### 3 Update the Autoware workspace
+
+Sometimes a workspace needs to be update, e.g. when the workspace needs to be updated to the state of a coworkers workspace, or fetch the newest
+issues from a repository, described [here](https://autowarefoundation.github.io/autoware-documentation/main/installation/autoware/source-installation/#how-to-update-a-workspace)
+
+Unfortunately, building can fail in some cases, this is why you can try to delete the `build`, `install`, and `log` folders:
+
+```
+rm -rf build install log
+```
+
+and then try building again:
+
+```
+colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+```
+
+#### Fetching the new tags:
+In order to fetch the tags from the current remote, you have to run the following command:
+
+```
+git fetch --tags
+```
