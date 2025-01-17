@@ -43,7 +43,7 @@ _AWSIM-Labs-BFH_ aims to deliver the basis for a simulation environment to provi
 
 Out of the box, _AWSIM-Labs_ provides the possibility to satisfy almost all of the desired tasks. 
 
-The Unity project already contains the an urban scene that is fully compatible with a provided `HD map` to be launched in autoware. It also contains a random traffic generator, that creates `NPC vehicles`, as well as `NPC pedestrians`.
+The Unity project already contains the an urban scene that is fully compatible with a provided _HD map_ to be launched in autoware. It also contains a random traffic generator, that creates _NPC vehicles_, as well as _NPC pedestrians_.
 
 Furthermore, _AWSIM Labs_ already contains interfaces for virtualizing camera and LIDAR sensors.
 
