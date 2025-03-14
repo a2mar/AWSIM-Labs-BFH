@@ -23,6 +23,7 @@ using UnityEngine.Splines;
 public class BezierCurveExample : MonoBehaviour
 {
     // Control Points for the middle line Bezier curve
+    [Header ("Control Points for the Middle Bezier Curve")]
     public Vector3 pm_0 = new Vector3(0, 0, 0);  // Start point
     public Vector3 pm_1 = new Vector3(10, 0, 20);  // Control point 1
     public Vector3 pm_2 = new Vector3(15, 0, 30);  // Control point 2
@@ -32,11 +33,14 @@ public class BezierCurveExample : MonoBehaviour
     private Vector3 _last_pm_0, _last_pm_1, _last_pm_2, _last_pm_3;
 
     private BezierCurve bezierCurve;
+
+    [Header ("Resolution (number of segments for every cubic Bezier curve)")]
     public int resolution = 20; // Number of segments
     // for recognizing state changes
     private int _last_resolution;
 
     // Control Points for the right line Bezier curve (approximation of the equidistant lines)
+    [Header ("Control Points for the Right Bezier Curve")]
     public Vector3 pr_0;  
     public Vector3 pr_1;  
     public Vector3 pr_2;  
@@ -45,6 +49,7 @@ public class BezierCurveExample : MonoBehaviour
     private BezierCurve rightBezTwin;
     
     // Control Points for the right line Bezier curve (approximation of the equidistant lines)
+    [Header ("Control Points for the Left Bezier Curve")]
     public Vector3 pl_0;  
     public Vector3 pl_1;  
     public Vector3 pl_2;  
