@@ -23,7 +23,7 @@ using UnityEngine.Splines;
 public class BezierCurveExample : MonoBehaviour
 {
     // Control Points for the middle line Bezier curve
-    [Header ("Control Points for the Middle Bezier Curve")]
+    [Header("Control Points for the Middle Bezier Curve")]
     public Vector3 pm_0 = new Vector3(0, 0, 0);  // Start point
     public Vector3 pm_1 = new Vector3(10, 0, 20);  // Control point 1
     public Vector3 pm_2 = new Vector3(15, 0, 30);  // Control point 2
@@ -34,26 +34,26 @@ public class BezierCurveExample : MonoBehaviour
 
     private BezierCurve bezierCurve;
 
-    [Header ("Resolution (number of segments for every cubic Bezier curve)")]
+    [Header("Resolution (number of segments for every cubic Bezier curve)")]
     public int resolution = 20; // Number of segments
     // for recognizing state changes
     private int _last_resolution;
 
     // Control Points for the right line Bezier curve (approximation of the equidistant lines)
-    [Header ("Control Points for the Right Bezier Curve")]
-    public Vector3 pr_0;  
-    public Vector3 pr_1;  
-    public Vector3 pr_2;  
-    public Vector3 pr_3;  
+    [Header("Control Points for the Right Bezier Curve")]
+    public Vector3 pr_0;
+    public Vector3 pr_1;
+    public Vector3 pr_2;
+    public Vector3 pr_3;
 
     private BezierCurve rightBezTwin;
-    
+
     // Control Points for the right line Bezier curve (approximation of the equidistant lines)
-    [Header ("Control Points for the Left Bezier Curve")]
-    public Vector3 pl_0;  
-    public Vector3 pl_1;  
-    public Vector3 pl_2;  
-    public Vector3 pl_3;  
+    [Header("Control Points for the Left Bezier Curve")]
+    public Vector3 pl_0;
+    public Vector3 pl_1;
+    public Vector3 pl_2;
+    public Vector3 pl_3;
 
     private BezierCurve leftBezTwin;
 
@@ -63,9 +63,16 @@ public class BezierCurveExample : MonoBehaviour
     private Vector3[] sampledFittedBezierR;
     private Vector3[] sampledFittedBezierL;
 
+    // Material for generative road mesh
+    public Material roadMaterial;
+
+    private MeshFilter meshFilter;
+    private MeshRenderer meshRenderer;
+    private Mesh mesh;
     void Start()
     {
         CalculateCurves();
+        GenerateRoadMesh();
     }
 
     void OnValidate()
@@ -74,9 +81,13 @@ public class BezierCurveExample : MonoBehaviour
         if (pm_0 != _last_pm_0 || pm_1 != _last_pm_1 || pm_2 != _last_pm_2 || pm_3 != _last_pm_3 || resolution != _last_resolution)
         {
             CalculateCurves();
-        } else {
+            GenerateRoadMesh();
+        }
+        else
+        {
             // Update the twin cubic Bezier curves and their sampled points
             UpdateTwinBezierSamplePoints();
+            GenerateRoadMesh();
         }
     }
     /// <summary>
@@ -225,7 +236,7 @@ public class BezierCurveExample : MonoBehaviour
         {
             Gizmos.DrawLine(leftPoints[i], leftPoints[i + 1]);
         }
-        
+
         // draw the sampled right twin Bezier curve 
         Gizmos.color = Color.red;
         for (int i = 0; i < sampledFittedBezierR.Length - 1; i++)
@@ -240,5 +251,74 @@ public class BezierCurveExample : MonoBehaviour
             Gizmos.DrawLine(sampledFittedBezierL[i], sampledFittedBezierL[i + 1]);
         }
     }
+
+    void GenerateRoadMesh()
+    {
+        if (leftPoints == null || rightPoints == null || leftPoints.Length != rightPoints.Length)
+        {
+            Debug.LogError("Left and Right points must have the same number of elements!");
+            return;
+        }
+
+        int numVerts = leftPoints.Length * 2;
+        Vector3[] vertices = new Vector3[numVerts];
+        Vector2[] uvs = new Vector2[numVerts];
+        int[] triangles = new int[(leftPoints.Length - 1) * 6];
+
+        // Assign vertices
+        for (int i = 0; i < leftPoints.Length; i++)
+        {
+            int vertIndex = i * 2;
+            vertices[vertIndex] = leftPoints[i];   // Left boundary
+            vertices[vertIndex + 1] = rightPoints[i]; // Right boundary
+
+            // Set UV mapping (simple stretch across the length)
+            float uvY = i / (float)(leftPoints.Length - 1);
+            uvs[vertIndex] = new Vector2(0, uvY);
+            uvs[vertIndex + 1] = new Vector2(1, uvY);
+        }
+
+        // Assign triangles
+        int triIndex = 0;
+        for (int i = 0; i < leftPoints.Length - 1; i++)
+        {
+            int vertIndex = i * 2;
+
+            // Triangle 1
+            triangles[triIndex] = vertIndex;
+            triangles[triIndex + 1] = vertIndex + 2;
+            triangles[triIndex + 2] = vertIndex + 1;
+
+            // Triangle 2
+            triangles[triIndex + 3] = vertIndex + 1;
+            triangles[triIndex + 4] = vertIndex + 2;
+            triangles[triIndex + 5] = vertIndex + 3;
+
+            triIndex += 6;
+        }
+
+        // Create the mesh
+        mesh = new Mesh();
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+        mesh.uv = uvs;
+        mesh.RecalculateNormals();
+
+        // Assign components
+        AssignMeshComponents();
+    }
+
+    void AssignMeshComponents()
+    {
+        if (meshFilter == null) meshFilter = gameObject.AddComponent<MeshFilter>();
+        if (meshRenderer == null) meshRenderer = gameObject.AddComponent<MeshRenderer>();
+
+        meshFilter.mesh = mesh;
+        if (roadMaterial != null)
+        {
+            meshRenderer.material = roadMaterial;
+        }
+    }
+
 }
 
