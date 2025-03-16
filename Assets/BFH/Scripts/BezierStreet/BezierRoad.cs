@@ -10,7 +10,7 @@
 // - refactor the encapsulated, iterative call chain (move function calls for discrete steps to the same level, i.e. to OnValidate)
 // - make the bezier curves editable in Scene with gizmos
 //
-// Author: Ammar Hammad,
+// Author: Ammar Hammad,,
 // 
 
 using System.Net;
@@ -84,7 +84,7 @@ public class BezierCurveExample : MonoBehaviour
     /// 1) the 2 perfectly equidistant lines left and right to the middle Bezier curve
     /// 2) initiate update of the twin Bezier curves that are prefitted to match the equidistant lines. 
     /// </summary>
-    void CalculateCurves()
+    public void CalculateCurves()
     {
         bezierCurve = new BezierCurve(pm_0, pm_1, pm_2, pm_3);
         (_last_pm_0, _last_pm_1, _last_pm_2, _last_pm_3, _last_resolution) = (pm_0, pm_1, pm_2, pm_3, resolution);
