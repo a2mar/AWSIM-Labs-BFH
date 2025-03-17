@@ -7,10 +7,9 @@
 // These can be manually fitted to match the equidistant lines as closely as possible.
 // 
 // ISSUES and Improvement ideas: 
-// - refactor the encapsulated, iterative call chain (move function calls for discrete steps to the same level, i.e. to OnValidate)
 // - make the bezier curves editable in Scene with gizmos
 //
-// Author: Ammar Hammad,,
+// Author: Ammar Hammad
 // 
 
 using System.Net;
@@ -63,16 +62,10 @@ public class BezierCurveExample : MonoBehaviour
     private Vector3[] sampledFittedBezierR;
     private Vector3[] sampledFittedBezierL;
 
-    // Material for generative road mesh
-    public Material roadMaterial;
 
-    private MeshFilter meshFilter;
-    private MeshRenderer meshRenderer;
-    private Mesh mesh;
     void Start()
     {
-        CalculateCurves();
-        GenerateRoadMesh();
+        CompleteSetup();
     }
 
     void OnValidate()
@@ -80,16 +73,29 @@ public class BezierCurveExample : MonoBehaviour
         // recalculate everything, if the middle bezier curve's parameter or the resolution changed
         if (pm_0 != _last_pm_0 || pm_1 != _last_pm_1 || pm_2 != _last_pm_2 || pm_3 != _last_pm_3 || resolution != _last_resolution)
         {
-            CalculateCurves();
-            GenerateRoadMesh();
+            CompleteSetup();
         }
         else
         {
-            // Update the twin cubic Bezier curves and their sampled points
+            // ONLY Update the twin cubic Bezier curves and their sampled points
             UpdateTwinBezierSamplePoints();
-            GenerateRoadMesh();
         }
     }
+
+    /// <summary>
+    /// Initiate the complete setup with curve and line creation, creation of twin Bezier curves, 
+    /// and the lines for the sampled twin bezier cirves, based on the current main Bezier curve.
+    /// </summary>
+    void CompleteSetup()
+    {
+        // CALCULATE ALL CURVES AND LINES based on the original Bezier curve
+        CalculateCurves();
+        // UPDATE THE BEZIER CURVES FOR APPROXIMATION OF THE LEFT AND RIGHT EQUIDISTANT LINES
+        UpdateBezierTwins();
+        // UPDATE the arrays for the sampled twin bezier curves
+        UpdateTwinBezierSamplePoints();
+    }
+
     /// <summary>
     /// Calculates all the Curves based on the middle cubic Bezier curve:
     /// 1) the 2 perfectly equidistant lines left and right to the middle Bezier curve
@@ -133,8 +139,6 @@ public class BezierCurveExample : MonoBehaviour
             leftPoints[i] = xProductLeft;
         }
 
-        // UPDATE THE BEZIER CURVES FOR APPROXIMATION OF THE LEFT AND RIGHT EQUIDISTANT LINES
-        UpdateBezierTwins();
     }
 
     /// <summary>
@@ -144,12 +148,9 @@ public class BezierCurveExample : MonoBehaviour
     /// </summary>
     void UpdateBezierTwins()
     {
-
         // create control knots for the twin curves left and right of the original curve
         (pr_0, pr_1, pr_2, pr_3) = BezierTwinKnots(bezierCurve, true);
         (pl_0, pl_1, pl_2, pl_3) = BezierTwinKnots(bezierCurve, false);
-
-        UpdateTwinBezierSamplePoints();
     }
 
     /// <summary>
@@ -247,94 +248,7 @@ public class BezierCurveExample : MonoBehaviour
         }
     }
 
-    void GenerateRoadMesh()
-    {
-        if (leftPoints == null || rightPoints == null || leftPoints.Length != rightPoints.Length)
-        {
-            Debug.LogError("Left and Right points must have the same number of elements!");
-            return;
-        }
-
-        // Assign components
-        AssignMeshComponents();
-
-        // Clear the previous mesh to prevent conflicts
-        if (meshFilter.sharedMesh != null)
-        {
-            DestroyImmediate(meshFilter.sharedMesh);
-        }
-
-        int numVerts = leftPoints.Length * 2;
-        Vector3[] vertices = new Vector3[numVerts];
-        Vector2[] uvs = new Vector2[numVerts];
-        int[] triangles = new int[(leftPoints.Length - 1) * 6];
-
-        // Assign vertices
-        for (int i = 0; i < leftPoints.Length; i++)
-        {
-            int vertIndex = i * 2;
-            vertices[vertIndex] = leftPoints[i];   // Left boundary
-            vertices[vertIndex + 1] = rightPoints[i]; // Right boundary
-
-            // Set UV mapping (simple stretch across the length)
-            float uvY = i / (float)(leftPoints.Length - 1);
-            uvs[vertIndex] = new Vector2(0, uvY);
-            uvs[vertIndex + 1] = new Vector2(1, uvY);
-        }
-
-        // Assign triangles
-        int triIndex = 0;
-        for (int i = 0; i < leftPoints.Length - 1; i++)
-        {
-            int vertIndex = i * 2;
-
-            // Triangle 1
-            triangles[triIndex] = vertIndex;
-            triangles[triIndex + 1] = vertIndex + 2;
-            triangles[triIndex + 2] = vertIndex + 1;
-
-            // Triangle 2
-            triangles[triIndex + 3] = vertIndex + 1;
-            triangles[triIndex + 4] = vertIndex + 2;
-            triangles[triIndex + 5] = vertIndex + 3;
-
-            triIndex += 6;
-        }
-
-        // Create the mesh
-        mesh = new Mesh();
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-        mesh.uv = uvs;
-        mesh.RecalculateNormals();
-
-        // Assign components
-        AssignMeshComponents();
-
-    }
-
-    void AssignMeshComponents()
-    {
-        if (meshFilter == null) meshFilter = gameObject.AddComponent<MeshFilter>();
-        if (meshRenderer == null) meshRenderer = gameObject.AddComponent<MeshRenderer>();
-
-        meshFilter.mesh = mesh;
-        // automatically search for "Road.mat" in Resources
-        if (roadMaterial == null)
-        {
-            roadMaterial = Resources.Load<Material>("Materials/BezierRoad/Road");
-
-            if (roadMaterial == null)
-            {
-                Debug.LogError("Road.mat not found in Resources folder! Assign a material manually.");
-            }
-        }
-
-        if (roadMaterial != null)
-        {
-            meshRenderer.material = roadMaterial;
-        }
-    }
-
+    public Vector3[] GetLeftPoints() => leftPoints;
+    public Vector3[] GetRightPoints() => rightPoints;
 }
 
