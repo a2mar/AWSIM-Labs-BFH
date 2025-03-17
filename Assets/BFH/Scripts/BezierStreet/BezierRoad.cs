@@ -319,6 +319,17 @@ public class BezierCurveExample : MonoBehaviour
         if (meshRenderer == null) meshRenderer = gameObject.AddComponent<MeshRenderer>();
 
         meshFilter.mesh = mesh;
+        // automatically search for "Road.mat" in Resources
+        if (roadMaterial == null)
+        {
+            roadMaterial = Resources.Load<Material>("Materials/BezierRoad/Road");
+
+            if (roadMaterial == null)
+            {
+                Debug.LogError("Road.mat not found in Resources folder! Assign a material manually.");
+            }
+        }
+
         if (roadMaterial != null)
         {
             meshRenderer.material = roadMaterial;
