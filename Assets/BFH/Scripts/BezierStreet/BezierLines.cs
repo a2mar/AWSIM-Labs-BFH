@@ -23,10 +23,10 @@ public class BezierCurveExample : MonoBehaviour
 {
     // Control Points for the middle line Bezier curve
     [Header("Control Points for the Middle Bezier Curve")]
-    public Vector3 pm_0 = new Vector3(0, 0, 0);  // Start point
-    public Vector3 pm_1 = new Vector3(10, 0, 20);  // Control point 1
-    public Vector3 pm_2 = new Vector3(15, 0, 30);  // Control point 2
-    public Vector3 pm_3 = new Vector3(4, 0, 40);  // End point
+    public Vector3 pm_0;  // Start point
+    public Vector3 pm_1;  // Control point 1
+    public Vector3 pm_2;  // Control point 2
+    public Vector3 pm_3;  // End point
 
     // for recognizing state changes
     private Vector3 _last_pm_0, _last_pm_1, _last_pm_2, _last_pm_3;
@@ -63,11 +63,6 @@ public class BezierCurveExample : MonoBehaviour
     private Vector3[] sampledFittedBezierL;
 
 
-    void Start()
-    {
-        CompleteSetup();
-    }
-
     void OnValidate()
     {
         // recalculate everything, if the middle bezier curve's parameter or the resolution changed
@@ -80,6 +75,21 @@ public class BezierCurveExample : MonoBehaviour
             // ONLY Update the twin cubic Bezier curves and their sampled points
             UpdateTwinBezierSamplePoints();
         }
+    }
+
+    public void ApplyMainBezierKnots(Vector3[] knots)
+    {
+        // safety check befor assigning new knot values
+        if (knots.Length == 4)
+        {
+            (pm_0, pm_1, pm_2, pm_3) = (knots[0], knots[1], knots[2], knots[3]);
+        }
+        else
+        {
+            Debug.LogError("Format mismatch. The Bezier knots cannot be applied");
+        }
+        // setup the Bezier Curve data
+        CompleteSetup();
     }
 
     /// <summary>
