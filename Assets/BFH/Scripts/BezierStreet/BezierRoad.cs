@@ -260,6 +260,15 @@ public class BezierCurveExample : MonoBehaviour
             return;
         }
 
+        // Assign components
+        AssignMeshComponents();
+
+        // Clear the previous mesh to prevent conflicts
+        if (meshFilter.sharedMesh != null)
+        {
+            DestroyImmediate(meshFilter.sharedMesh);
+        }
+
         int numVerts = leftPoints.Length * 2;
         Vector3[] vertices = new Vector3[numVerts];
         Vector2[] uvs = new Vector2[numVerts];
@@ -306,6 +315,7 @@ public class BezierCurveExample : MonoBehaviour
 
         // Assign components
         AssignMeshComponents();
+
     }
 
     void AssignMeshComponents()
