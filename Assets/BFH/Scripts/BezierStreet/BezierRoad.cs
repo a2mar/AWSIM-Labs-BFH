@@ -98,6 +98,7 @@ public class BezierCurveExample : MonoBehaviour
     public void CalculateCurves()
     {
         bezierCurve = new BezierCurve(pm_0, pm_1, pm_2, pm_3);
+        // save the new state to the _last variables
         (_last_pm_0, _last_pm_1, _last_pm_2, _last_pm_3, _last_resolution) = (pm_0, pm_1, pm_2, pm_3, resolution);
         curvePoints = new Vector3[resolution];
         rightPoints = new Vector3[resolution - 1];
@@ -110,7 +111,6 @@ public class BezierCurveExample : MonoBehaviour
         {
             float t = (float)i / (resolution - 1); // Ensure last point is at t = 1
             curvePoints[i] = CurveUtility.EvaluatePosition(bezierCurve, t);
-            // Debug.Log("curve: " + curvePoints[i]);
         }
 
         // define the normal vertical vector for the complete 2d curve
@@ -122,17 +122,13 @@ public class BezierCurveExample : MonoBehaviour
         {
             // calculate local curve direction vector
             Vector3 curveVector = curvePoints[i + 1] - curvePoints[i];
-            if (i == 1) Debug.Log("the current curve Point is: " + curvePoints[i]);
+
             // calcualte the local normal
             Vector3 currentNormal = curvePoints[i] + normal;
-            if (i == 1) Debug.Log("the current normal Point is: " + currentNormal);
 
             // calculate cross product of normal and the normalized curve vector and add start posistion to it
             Vector3 xProductRight = Vector3.Cross(normal, curveVector.normalized) + curvePoints[i];  // Unity is left-hand
             Vector3 xProductLeft = Vector3.Cross(curveVector.normalized, normal) + curvePoints[i];
-            if (i == 1 || i == 4) Debug.Log("the current x product point Point is: " + xProductLeft);
-
-            // Debug.Log("the calculated xProduct is: " + xProductRight);
 
             rightPoints[i] = xProductRight;
             leftPoints[i] = xProductLeft;
