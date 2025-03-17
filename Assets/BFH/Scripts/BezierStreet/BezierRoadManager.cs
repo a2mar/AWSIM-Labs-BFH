@@ -12,11 +12,12 @@ using UnityEngine;
 [ExecuteInEditMode()]
 public class BezierRoadManager : MonoBehaviour
 {
-    private BezierCurveExample bezierCurve;
-    private BezierRoadMesh roadMesh;
-    private GameObject bezierCurveObject;  // GO for curves and lanes data
-    private GameObject roadMeshObject;  // GO for road mesh
-    private GameObject roadSegment;  // GO for road segment
+    private int segmentCount = 1;
+    private BezierCurveExample[] bezierCurves;
+    private BezierRoadMesh[] roadMeshes;
+    private GameObject[] bezierCurveObjects;  // GObj for curves and lanes data
+    private GameObject[] roadMeshObjects;  // GObj for road mesh
+    private GameObject[] roadSegments;  // GObj for road segment
 
 
     void Start()
@@ -30,34 +31,45 @@ public class BezierRoadManager : MonoBehaviour
 
     void AssignComponents()
     {
-        // check if the objects already exist, if not, create them
-        if (roadSegment == null)
+        // initate all arrays
+        bezierCurves = new BezierCurveExample[segmentCount];
+        roadMeshes = new BezierRoadMesh[segmentCount];
+        bezierCurveObjects = new GameObject[segmentCount];
+        roadMeshObjects = new GameObject[segmentCount];
+        roadSegments = new GameObject[segmentCount];
+
+        for (int i = 0; i < segmentCount; i++)
         {
-            roadSegment = new GameObject("RoadSegment");
-            roadSegment.transform.parent = this.transform;
+            // check if the objects already exist, if not, create them
+            if (roadSegments[i] == null)
+            {
+                roadSegments[i]  = new GameObject("RoadSegment");
+                roadSegments[i].transform.parent = this.transform;
+            }
+
+            if (bezierCurveObjects[i] == null)
+            {
+                bezierCurveObjects[i] = new GameObject("BezierCurveContainer");
+                bezierCurveObjects[i].transform.parent = roadSegments[i].transform; // set as a child of the manager
+                bezierCurves[i] = bezierCurveObjects[i].AddComponent<BezierCurveExample>();
+            }
+            else
+            {
+                bezierCurves[i] = bezierCurveObjects[i].GetComponent<BezierCurveExample>();
+            }
+
+            if (roadMeshObjects[i] == null)
+            {
+                roadMeshObjects[i] = new GameObject("RoadMeshContainer");
+                roadMeshObjects[i].transform.parent = roadSegments[i].transform; // set as a child of the manager
+                roadMeshes[i] = roadMeshObjects[i].AddComponent<BezierRoadMesh>();
+            }
+            else
+            {
+                roadMeshes[i] = roadMeshObjects[i].GetComponent<BezierRoadMesh>();
+            }
         }
 
-        if (bezierCurveObject == null)
-        {
-            bezierCurveObject = new GameObject("BezierCurveContainer");
-            bezierCurveObject.transform.parent = roadSegment.transform; // set as a child of the manager
-            bezierCurve = bezierCurveObject.AddComponent<BezierCurveExample>();
-        }
-        else
-        {
-            bezierCurve = bezierCurveObject.GetComponent<BezierCurveExample>();
-        }
-
-        if (roadMeshObject == null)
-        {
-            roadMeshObject = new GameObject("RoadMeshContainer");
-            roadMeshObject.transform.parent = roadSegment.transform; // set as a child of the manager
-            roadMesh = roadMeshObject.AddComponent<BezierRoadMesh>();
-        }
-        else
-        {
-            roadMesh = roadMeshObject.GetComponent<BezierRoadMesh>();
-        }
     }
 
     void Update()
@@ -68,7 +80,10 @@ public class BezierRoadManager : MonoBehaviour
 
     private void UpdateRoadMesh()
     {
-        roadMesh.GenerateRoadMesh(bezierCurve.GetLeftPoints(), bezierCurve.GetRightPoints());
+        for (int i = 0; i < segmentCount; i++)
+        {
+            roadMeshes[i].GenerateRoadMesh(bezierCurves[i].GetLeftPoints(), bezierCurves[i].GetRightPoints());
+        }
     }
 }
 
