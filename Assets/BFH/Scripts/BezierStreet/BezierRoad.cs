@@ -101,8 +101,8 @@ public class BezierCurveExample : MonoBehaviour
         // save the new state to the _last variables
         (_last_pm_0, _last_pm_1, _last_pm_2, _last_pm_3, _last_resolution) = (pm_0, pm_1, pm_2, pm_3, resolution);
         curvePoints = new Vector3[resolution];
-        rightPoints = new Vector3[resolution - 1];
-        leftPoints = new Vector3[resolution - 1];
+        rightPoints = new Vector3[resolution];
+        leftPoints = new Vector3[resolution];
         sampledFittedBezierR = new Vector3[resolution];
         sampledFittedBezierL = new Vector3[resolution];
 
@@ -117,14 +117,13 @@ public class BezierCurveExample : MonoBehaviour
         Vector3 normal = new Vector3(0, 1, 0);
 
         // CALCULATE EUQIDISTANT LINES LEFT AND RIGHT OF THE BEZIER CURVE
-        // for each calculated curve point, create the opposing cross products to obtain points left and right of the curve
-        for (int i = 0; i < resolution - 1; i++)
+        // for each sampled curve point, create the opposing cross products to obtain points left and right of the curve
+        for (int i = 0; i < resolution; i++)
         {
             // calculate local curve direction vector
-            Vector3 curveVector = curvePoints[i + 1] - curvePoints[i];
-
-            // calcualte the local normal
-            Vector3 currentNormal = curvePoints[i] + normal;
+            Vector3 curveVector;
+            if (i == resolution - 1) curveVector = curvePoints[i] - curvePoints[i - 1];
+            else curveVector = curvePoints[i + 1] - curvePoints[i];
 
             // calculate cross product of normal and the normalized curve vector and add start posistion to it
             Vector3 xProductRight = Vector3.Cross(normal, curveVector.normalized) + curvePoints[i];  // Unity is left-hand
@@ -187,17 +186,17 @@ public class BezierCurveExample : MonoBehaviour
         float factorS = 0.45f;
         float factorE = 0.285f;
 
-        // define orientation (-1) dependent on right being true or false
-        float orientation = right == true ? 1.0f : -1.0f;
-
         // transform start and endpoint
         // get original start and end tangents
         Vector3 startTangent = factorS * CurveUtility.EvaluateTangent(origBezCurve, 0.00f);
         Vector3 endTangent = -1.0f * factorE * CurveUtility.EvaluateTangent(origBezCurve, 1.00f);
 
+        // define orientation (-1 or 1) depending on bool "right" being true or false
+        float orientation = right == true ? 1.0f : -1.0f;
+
         // calculate twin's start and end point the cross product between normal and tangent vector 
         // and add original start and end point to it
-        // USING bxa = -axb to switch between axb and bxa simple by factor
+        // USING bxa = -axb = (-1*a)xb, to switch between axb and bxa simple by factor
         Vector3 startPoint = Vector3.Cross(orientation * normal, startTangent.normalized) + pm_0;
         Vector3 endPoint = Vector3.Cross(orientation * endTangent.normalized, normal) + pm_3;
 
