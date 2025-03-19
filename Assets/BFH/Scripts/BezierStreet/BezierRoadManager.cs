@@ -3,7 +3,7 @@
 // respective generated road mesh.
 //
 // TODO:
-// - 
+// - add randomization to road segments
 // 
 // Author: Ammar Hammad
 
@@ -14,7 +14,7 @@ using UnityEngine;
 public class BezierRoadManager : MonoBehaviour
 {
     private int segmentCount = 8;  // at least 4 for cricle creation
-    private float radius = 40.0f;
+    private float radius = 160.0f;
     private BezierCurveExample[] bezierCurves;  // Bezier Curve Data component
     private BezierRoadMesh[] roadMeshes;  // road mesh component
     private GameObject[] bezierCurveObjects;  // GObj for curves and lanes data
@@ -113,7 +113,11 @@ public class BezierRoadManager : MonoBehaviour
         Vector3 normal = new(0, 1, 0);
         // calculate the amplitude factor for the tangents. 
         // It is directly related to the number of segments for the circle.
-        float amp = (float) (2.00f / segmentCount);
+        // from Stackoverflow: (4/3)*tan(pi/(2n)) (https://stackoverflow.com/questions/1734745/how-to-create-circle-with-b%C3%A9zier-curves)
+        float amp = (4.0f / 3.0f) * Mathf.Tan( (float) (Math.PI / (2.0f * segmentCount) ) );
+        
+        //float amp = (float) (2.00f / segmentCount);  // primitive, inaccurate variant
+
         // calculate the endpoint of the start tangent, which is the first intermediary point
         Vector3 p_1 = amp * Vector3.Cross(p_0, normal) + p_0;
         // calculate the endpoint of the end tangent, which is the second intermediary point

@@ -63,6 +63,9 @@ public class BezierCurveExample : MonoBehaviour
     private Vector3[] sampledFittedBezierR;
     private Vector3[] sampledFittedBezierL;
 
+    // scaling factor to adjust the width of the lane
+    private float roadScaling = 5.00f;
+
 
     void OnValidate()
     {
@@ -126,12 +129,15 @@ public class BezierCurveExample : MonoBehaviour
         // sample the Bezier curve over t
         for (int i = 0; i < resolution; i++)
         {
-            float t = (float)i / (resolution - 1); // Ensure last point is at t = 1
+            float t = (float)i / (resolution - 1); // ensures last point is at t = 1
             curvePoints[i] = CurveUtility.EvaluatePosition(bezierCurve, t);
         }
 
         // define the normal vertical vector for the complete 2d curve
         Vector3 normal = new Vector3(0, 1, 0);
+
+        // define scaling factor to adjust lane width
+        
 
         // CALCULATE EUQIDISTANT LINES LEFT AND RIGHT OF THE BEZIER CURVE
         // for each sampled curve point, create the opposing cross products to obtain points left and right of the curve
@@ -139,12 +145,16 @@ public class BezierCurveExample : MonoBehaviour
         {
             // calculate local curve direction vector
             Vector3 curveVector;
-            if (i == resolution - 1) curveVector = curvePoints[i] - curvePoints[i - 1];
+            // startpoints
+            if (i == 0) curveVector = CurveUtility.EvaluateTangent(bezierCurve, 0.00f);
+            // endpoints
+            else if (i == resolution - 1) curveVector = CurveUtility.EvaluateTangent(bezierCurve, 1.00f);
+            // intermediary points
             else curveVector = curvePoints[i + 1] - curvePoints[i];
 
             // calculate cross product of normal and the normalized curve vector and add start posistion to it
-            Vector3 xProductRight = Vector3.Cross(normal, curveVector.normalized) + curvePoints[i];  // Unity is left-hand
-            Vector3 xProductLeft = Vector3.Cross(curveVector.normalized, normal) + curvePoints[i];
+            Vector3 xProductRight = roadScaling * Vector3.Cross(normal, curveVector.normalized) + curvePoints[i];  // Unity is left-hand
+            Vector3 xProductLeft = roadScaling * Vector3.Cross(curveVector.normalized, normal) + curvePoints[i];
 
             rightPoints[i] = xProductRight;
             leftPoints[i] = xProductLeft;
@@ -160,8 +170,8 @@ public class BezierCurveExample : MonoBehaviour
     void UpdateBezierTwins()
     {
         // create control knots for the twin curves left and right of the original curve
-        (pr_0, pr_1, pr_2, pr_3) = BezierTwinKnots(bezierCurve, true);
-        (pl_0, pl_1, pl_2, pl_3) = BezierTwinKnots(bezierCurve, false);
+        (pr_0, pr_1, pr_2, pr_3) = BezierTwinKnots(true);
+        (pl_0, pl_1, pl_2, pl_3) = BezierTwinKnots(false);
     }
 
     /// <summary>
@@ -185,10 +195,9 @@ public class BezierCurveExample : MonoBehaviour
     /// Claculates the cubic twin Bezier curve's control knots using the middle Bezier curve's start and end tangent vector. 
     /// The start and end control points are not yet fitted to the curve.
     /// </summary>
-    /// <param name="origBezCurve">the middle cubic Bezier curve</param>
     /// <param name="right">if true, the right curve's control knots should be calculated, else the left's</param>
     /// <returns>the 4 control points for a cubic Bezier curve</returns>
-    (Vector3, Vector3, Vector3, Vector3) BezierTwinKnots(BezierCurve origBezCurve, bool right)
+    (Vector3, Vector3, Vector3, Vector3) BezierTwinKnots(bool right)
     {
         // define normal vector
         Vector3 normal = new Vector3(0, 1, 0);
@@ -200,8 +209,8 @@ public class BezierCurveExample : MonoBehaviour
 
         // transform start and endpoint
         // get original start and end tangents
-        Vector3 startTangent = factorS * CurveUtility.EvaluateTangent(origBezCurve, 0.00f);
-        Vector3 endTangent = -1.0f * factorE * CurveUtility.EvaluateTangent(origBezCurve, 1.00f);
+        Vector3 startTangent = factorS * CurveUtility.EvaluateTangent(bezierCurve, 0.00f);
+        Vector3 endTangent = -1.0f * factorE * CurveUtility.EvaluateTangent(bezierCurve, 1.00f);
 
         // define orientation (-1 or 1) depending on bool "right" being true or false
         float orientation = right == true ? 1.0f : -1.0f;
@@ -209,8 +218,8 @@ public class BezierCurveExample : MonoBehaviour
         // calculate twin's start and end point the cross product between normal and tangent vector 
         // and add original start and end point to it
         // USING bxa = -axb = (-1*a)xb, to switch between axb and bxa simple by factor
-        Vector3 startPoint = Vector3.Cross(orientation * normal, startTangent.normalized) + pm_0;
-        Vector3 endPoint = Vector3.Cross(orientation * endTangent.normalized, normal) + pm_3;
+        Vector3 startPoint = roadScaling * Vector3.Cross(orientation * normal, startTangent.normalized) + pm_0;
+        Vector3 endPoint = roadScaling * Vector3.Cross(orientation * endTangent.normalized, normal) + pm_3;
 
         // calculate the intermediary points p_1 and p_2
         Vector3 p_1 = startPoint + startTangent;
@@ -259,7 +268,7 @@ public class BezierCurveExample : MonoBehaviour
         }
     }
 
-    public Vector3[] GetLeftPoints() => leftPoints;
-    public Vector3[] GetRightPoints() => rightPoints;
+    public Vector3[] GetLeftPoints() => leftPoints;  // for debugging, sampledFittedBezierL;
+    public Vector3[] GetRightPoints() => rightPoints;  // debugging, sampledFittedBezierR;
 }
 

@@ -12,10 +12,10 @@ public class BezierRoadMesh : MonoBehaviour
 {
     // material for generative road mesh. can be swapped in inspector, but default will be loaded in this script
     public Material roadMaterial;
-
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
     private Mesh mesh;
+    private BoxCollider boxCollider;
     public void GenerateRoadMesh(Vector3[] leftPoints, Vector3[] rightPoints)
     {
         if (leftPoints == null || rightPoints == null || leftPoints.Length != rightPoints.Length)
@@ -69,6 +69,8 @@ public class BezierRoadMesh : MonoBehaviour
         mesh.RecalculateNormals();
 
         meshFilter.mesh = mesh;
+
+        CreateBoundingBox(vertices);
     }
 
 
@@ -93,5 +95,30 @@ public class BezierRoadMesh : MonoBehaviour
         {
             meshRenderer.material = roadMaterial;
         }
+    }
+
+        void CreateBoundingBox(Vector3[] vertices)
+    {
+        if (vertices == null || vertices.Length == 0) return;
+
+        Vector3 min = vertices[0];
+        Vector3 max = vertices[0];
+
+        foreach (Vector3 v in vertices)
+        {
+            min = Vector3.Min(min, v);
+            max = Vector3.Max(max, v);
+        }
+
+        Vector3 center = (min + max) / 2f;
+        Vector3 size = max - min;
+
+        if (boxCollider == null)
+        {
+            boxCollider = gameObject.AddComponent<BoxCollider>();
+        }
+
+        boxCollider.center = this.transform.InverseTransformPoint(center);
+        boxCollider.size = size;
     }
 }
