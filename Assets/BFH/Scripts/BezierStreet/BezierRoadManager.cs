@@ -36,13 +36,7 @@ public class BezierRoadManager : MonoBehaviour
         UpdateRoadMesh();
     }
 
-    void Update()
-    {
-        // Update road mesh dynamically (if curves change)
-        UpdateRoadMesh();
-    }
-
-    private void UpdateRoadMesh()
+    public void UpdateRoadMesh()
     {
         for (int i = 0; i < segmentCount; i++)
         {
