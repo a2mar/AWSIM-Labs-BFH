@@ -147,7 +147,6 @@ public class BezierRoadManager : MonoBehaviour
 
         // calculate the displacement factor from random deviations
         float deviation1 = (100.0f + randomNumbers[segment]) / 100.0f;
-        // float deviation2 = (100.0f - randomNumbers[(segment + 1) % segmentCount]) / 100.0f;
 
         // calculate angle between endpoints
         float angleRadian = (float)(Math.PI * 2 / segmentCount);
@@ -170,21 +169,16 @@ public class BezierRoadManager : MonoBehaviour
         // from Stackoverflow: (4/3)*tan(pi/(2n)) (https://stackoverflow.com/questions/1734745/how-to-create-circle-with-b%C3%A9zier-curves)
         float amp = (4.0f / 3.0f) * Mathf.Tan((float)(Math.PI / (2.0f * segmentCount)));
 
-        //float amp = (float) (2.00f / segmentCount);  // primitive, inaccurate variant
-        // STILL CO
-        // calculate the endpoint of the start tangent, which is the first intermediary point
-        // Vector3 p_1 = (amp * Vector3.Cross(p_0, normal) + p_0) * deviation1;
-        // calculate the endpoint of the end tangent, which is the second intermediary point
-        // Vector3 p_2 = (amp * Vector3.Cross(normal, p_3) + p_3) * deviation2;
-        
-        // new idea: use the previous quadrouple of Bezier knots for calculating the curent knots
+        // C2 CONTINUITY WITH RANDOMNES        
+        // use the previous quadrouple of Bezier knots for calculating the curent knots
         Vector3 p_1;
-        if (segment == 0) p_1 = amp * Vector3.Cross(p_0, normal) + p_0;
-        else p_1 = p_0 - (bezierKnots[segment - 1][2] - p_0);
-        Vector3 p_2 = (amp * Vector3.Cross(normal, p_3) + p_3) * deviation1;
+        if (segment == 0) p_1 = amp * Vector3.Cross(p_0, normal) + p_0;  //  keep the first segment straight for starting
+        else p_1 = p_0 - (bezierKnots[segment - 1][2] - p_0);  //  to p_0 add the neg. vector betw. the prev. segment's p_2 and current p_0
+        Vector3 p_2;
+        if (segment == segmentCount - 1) p_2 = p_3 - (bezierKnots[0][1] - p_3);  //  same as for p_1 but mirrored
+        else p_2 = (amp * Vector3.Cross(normal, p_3) + p_3) * deviation1;  //  1) calculate perfect circle knot 2) multiply with rand. dev.
 
         return new Vector3[] { p_0, p_1, p_2, p_3 };
-        // return new Vector3[] { new(0, 0, 0), new(10, 0, 20), new(15, 0, 30), new(4, 0, 40) };
     }
 
     void AssignComponents()
