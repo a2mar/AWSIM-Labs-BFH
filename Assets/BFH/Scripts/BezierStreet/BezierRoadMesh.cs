@@ -36,13 +36,16 @@ public class BezierRoadMesh : MonoBehaviour
         Vector2[] uvs = new Vector2[numVerts];
         int[] triangles = new int[(leftPoints.Length - 1) * 6];
 
+        // define repeats:
+        float textureRepeatsY = 10.0f;
+
         for (int i = 0; i < leftPoints.Length; i++)
         {
             int vertIndex = i * 2;
             vertices[vertIndex] = leftPoints[i];
             vertices[vertIndex + 1] = rightPoints[i];
 
-            float uvY = i / (float)(leftPoints.Length - 1);
+            float uvY = i / (float)(leftPoints.Length - 1) * textureRepeatsY;
             uvs[vertIndex] = new Vector2(0, uvY);
             uvs[vertIndex + 1] = new Vector2(1, uvY);
         }
@@ -80,10 +83,10 @@ public class BezierRoadMesh : MonoBehaviour
         if (meshRenderer == null) meshRenderer = gameObject.AddComponent<MeshRenderer>();
 
         meshFilter.mesh = mesh;
-        // automatically search for "Road.mat" in Resources
+        // automatically search for "Road-Realistic.mat" in Resources
         if (roadMaterial == null)
         {
-            roadMaterial = Resources.Load<Material>("Materials/BezierRoad/Road");
+            roadMaterial = Resources.Load<Material>("Materials/BezierRoad/Road-Realistic");
 
             if (roadMaterial == null)
             {

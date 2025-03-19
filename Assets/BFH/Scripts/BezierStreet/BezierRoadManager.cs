@@ -3,7 +3,9 @@
 // respective generated road mesh.
 //
 // TODO:
+// - don't call Start on Play 
 // - add randomization to road segments
+//
 // 
 // Author: Ammar Hammad
 
