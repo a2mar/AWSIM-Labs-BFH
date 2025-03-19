@@ -26,8 +26,16 @@ public class BezierRoadManager : MonoBehaviour
     // Bezier Vectors [row][col], each row defines the BezierKnots for a cubic bezier curve.
     private Vector3[][] bezierKnots;  // maybe unused, when the Bezier knots are directly applied to the Bezier Curve Components
 
+    /// <summary>
+    /// TODO: determine, in which mode the component is supposed to be started.
+    /// </summary>
     void Start()
     {
+        if (Application.isPlaying)
+        {
+            return;  // Skip execution in Play Mode
+        }
+        Debug.Log("Start is Called!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         // create BezierCurveExample and BezierRoadMesh dynamically
         AssignComponents();
         // create Vectors for the Bezier curves and update the Bezier Curve Components
@@ -110,8 +118,8 @@ public class BezierRoadManager : MonoBehaviour
         // calculate the amplitude factor for the tangents. 
         // It is directly related to the number of segments for the circle.
         // from Stackoverflow: (4/3)*tan(pi/(2n)) (https://stackoverflow.com/questions/1734745/how-to-create-circle-with-b%C3%A9zier-curves)
-        float amp = (4.0f / 3.0f) * Mathf.Tan( (float) (Math.PI / (2.0f * segmentCount) ) );
-        
+        float amp = (4.0f / 3.0f) * Mathf.Tan((float)(Math.PI / (2.0f * segmentCount)));
+
         //float amp = (float) (2.00f / segmentCount);  // primitive, inaccurate variant
 
         // calculate the endpoint of the start tangent, which is the first intermediary point
