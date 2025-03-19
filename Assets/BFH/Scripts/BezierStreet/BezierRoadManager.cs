@@ -12,6 +12,10 @@
 using System;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 [ExecuteInEditMode()]
 public class BezierRoadManager : MonoBehaviour
 {
@@ -26,22 +30,45 @@ public class BezierRoadManager : MonoBehaviour
     // Bezier Vectors [row][col], each row defines the BezierKnots for a cubic bezier curve.
     private Vector3[][] bezierKnots;  // maybe unused, when the Bezier knots are directly applied to the Bezier Curve Components
 
+    // how much the control knots can be randomply scattered
+    [Header("Range of Random Scattering of Bezier Control Knots (0 means no random scattering)")]
+    public float scatteringRange = 0f;
+    private float[] randomNumbers;
+
     /// <summary>
     /// TODO: determine, in which mode the component is supposed to be started.
     /// </summary>
-    void Start()
+    void Awake()
     {
         if (Application.isPlaying)
         {
             return;  // Skip execution in Play Mode
         }
-        Debug.Log("Start is Called!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         // create BezierCurveExample and BezierRoadMesh dynamically
         AssignComponents();
         // create Vectors for the Bezier curves and update the Bezier Curve Components
         InitializeBezierKnots();
         // generate the initial road mesh
         UpdateRoadMesh();
+    }
+
+    void OnValidate()
+    {
+        #if UNITY_EDITOR
+        EditorApplication.delayCall += () =>
+        {
+            if (this != null)
+            {
+                // UPDATE Road with new random scattering
+                // create Vectors for the Bezier curves and update the Bezier Curve Components
+                InitializeBezierKnots();
+                // generate the initial road mesh
+                UpdateRoadMesh();
+
+            }
+        };
+        #endif
+
     }
 
     public void UpdateRoadMesh()
@@ -57,6 +84,10 @@ public class BezierRoadManager : MonoBehaviour
         // allocate the Bezier Knots array
         bezierKnots = new Vector3[segmentCount][];
 
+        // generate deviation factors for random scattering
+        GenerateRandomNumbers();
+
+
         // allocate each row to hold 4 Vector3 elements (cubic Bezier curve's control knots)
         for (int i = 0; i < segmentCount; i++)
         {
@@ -65,6 +96,20 @@ public class BezierRoadManager : MonoBehaviour
             bezierKnots[i] = CircularCubicBezierKnots(i);
             // apply to the corresponding Bezier Curve Components
             bezierCurves[i].ApplyMainBezierKnots(bezierKnots[i]);
+        }
+    }
+
+    /// <summary>
+    /// Generates the random deviations for all road segments except the first
+    /// </summary>
+    private void GenerateRandomNumbers()
+    {
+        randomNumbers = new float[segmentCount];
+        randomNumbers[segmentCount - 1] = 1;
+        for (int i = 0; i < segmentCount - 1; i++)
+        {
+            System.Random random = new System.Random();
+            randomNumbers[i] = (float)(random.NextDouble() * 2.0 * scatteringRange - scatteringRange);
         }
     }
 
@@ -99,6 +144,11 @@ public class BezierRoadManager : MonoBehaviour
             Debug.LogError("Two little segments for Cricle creation");
             return null;
         }
+
+        // calculate the displacement factor from random deviations
+        float deviation1 = (100.0f + randomNumbers[segment]) / 100.0f;
+        // float deviation2 = (100.0f - randomNumbers[(segment + 1) % segmentCount]) / 100.0f;
+
         // calculate angle between endpoints
         float angleRadian = (float)(Math.PI * 2 / segmentCount);
 
@@ -121,11 +171,17 @@ public class BezierRoadManager : MonoBehaviour
         float amp = (4.0f / 3.0f) * Mathf.Tan((float)(Math.PI / (2.0f * segmentCount)));
 
         //float amp = (float) (2.00f / segmentCount);  // primitive, inaccurate variant
-
+        // STILL CO
         // calculate the endpoint of the start tangent, which is the first intermediary point
-        Vector3 p_1 = amp * Vector3.Cross(p_0, normal) + p_0;
+        // Vector3 p_1 = (amp * Vector3.Cross(p_0, normal) + p_0) * deviation1;
         // calculate the endpoint of the end tangent, which is the second intermediary point
-        Vector3 p_2 = amp * Vector3.Cross(normal, p_3) + p_3;
+        // Vector3 p_2 = (amp * Vector3.Cross(normal, p_3) + p_3) * deviation2;
+        
+        // new idea: use the previous quadrouple of Bezier knots for calculating the curent knots
+        Vector3 p_1;
+        if (segment == 0) p_1 = amp * Vector3.Cross(p_0, normal) + p_0;
+        else p_1 = p_0 - (bezierKnots[segment - 1][2] - p_0);
+        Vector3 p_2 = (amp * Vector3.Cross(normal, p_3) + p_3) * deviation1;
 
         return new Vector3[] { p_0, p_1, p_2, p_3 };
         // return new Vector3[] { new(0, 0, 0), new(10, 0, 20), new(15, 0, 30), new(4, 0, 40) };
