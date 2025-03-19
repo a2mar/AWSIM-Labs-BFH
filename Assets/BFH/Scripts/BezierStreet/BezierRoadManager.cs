@@ -3,16 +3,18 @@
 // respective generated road mesh.
 //
 // TODO:
-// - creation of multiple connected road meshes
+// - 
 // 
 // Author: Ammar Hammad
 
+using System;
 using UnityEngine;
 
 [ExecuteInEditMode()]
 public class BezierRoadManager : MonoBehaviour
 {
-    private int segmentCount = 1;
+    private int segmentCount = 8;  // at least 4 for cricle creation
+    private float radius = 40.0f;
     private BezierCurveExample[] bezierCurves;  // Bezier Curve Data component
     private BezierRoadMesh[] roadMeshes;  // road mesh component
     private GameObject[] bezierCurveObjects;  // GObj for curves and lanes data
@@ -54,7 +56,9 @@ public class BezierRoadManager : MonoBehaviour
         // allocate each row to hold 4 Vector3 elements (cubic Bezier curve's control knots)
         for (int i = 0; i < segmentCount; i++)
         {
-            bezierKnots[i] = CubicBezierKnots();
+            Vector3[] previous = i > 0 ? bezierKnots[i - 1] : null;
+            // bezierKnots[i] = CubicBezierKnots(previous);
+            bezierKnots[i] = CircularCubicBezierKnots(i);
             // apply to the corresponding Bezier Curve Components
             bezierCurves[i].ApplyMainBezierKnots(bezierKnots[i]);
         }
@@ -65,9 +69,58 @@ public class BezierRoadManager : MonoBehaviour
     /// use the previous segment's orientation for the rotation, and its last two control knots for continuity (C2, preferably)
     /// </summary>
     /// <returns></returns>
-    Vector3[] CubicBezierKnots()
+    Vector3[] CubicBezierKnots(Vector3[] previous = null)
     {
+        if (previous.Length != 4)
+        {
+            Debug.LogError("Format mismatch: Knots array must consist of 4 vectors");
+            return null;
+        }
+        // calculate the general direction of the previous curve
+        Vector3 direction = previous[3] - previous[0];
+
         return new Vector3[] { new(0, 0, 0), new(10, 0, 20), new(15, 0, 30), new(4, 0, 40) };
+    }
+
+    /// <summary>
+    /// Use the count of segments, the current segment number, and a sampled circle with a defined radius to create Bezier knots
+    /// </summary>
+    /// <param name="segment"></param>
+    /// <returns></returns>
+    Vector3[] CircularCubicBezierKnots(int segment)
+    {
+        // check if minimum amount of segments is 4
+        if (segmentCount < 4)
+        {
+            Debug.LogError("Two little segments for Cricle creation");
+            return null;
+        }
+        // calculate angle between endpoints
+        float angleRadian = (float)(Math.PI * 2 / segmentCount);
+
+        // start points
+        float x_0 = radius * Mathf.Cos(angleRadian * segment);
+        float z_0 = radius * Mathf.Sin(angleRadian * segment);
+        Vector3 p_0 = new(x_0, 0, z_0);
+
+        // end points
+        float x_3 = radius * Mathf.Cos(angleRadian * (segment + 1));
+        float z_3 = radius * Mathf.Sin(angleRadian * (segment + 1));
+        Vector3 p_3 = new(x_3, 0, z_3);
+
+        // CALCULATE the intermediary knots
+        // define normal vector
+        Vector3 normal = new(0, 1, 0);
+        // calculate the amplitude factor for the tangents. 
+        // It is directly related to the number of segments for the circle.
+        float amp = (float) (2.00f / segmentCount);
+        // calculate the endpoint of the start tangent, which is the first intermediary point
+        Vector3 p_1 = amp * Vector3.Cross(p_0, normal) + p_0;
+        // calculate the endpoint of the end tangent, which is the second intermediary point
+        Vector3 p_2 = amp * Vector3.Cross(normal, p_3) + p_3;
+
+        return new Vector3[] { p_0, p_1, p_2, p_3 };
+        // return new Vector3[] { new(0, 0, 0), new(10, 0, 20), new(15, 0, 30), new(4, 0, 40) };
     }
 
     void AssignComponents()
@@ -84,7 +137,7 @@ public class BezierRoadManager : MonoBehaviour
             // check if the objects already exist, if not, create them
             if (roadSegments[i] == null)
             {
-                roadSegments[i] = new GameObject("RoadSegment");
+                roadSegments[i] = new GameObject($"RoadSegment{i}");
                 roadSegments[i].transform.parent = this.transform;
             }
 

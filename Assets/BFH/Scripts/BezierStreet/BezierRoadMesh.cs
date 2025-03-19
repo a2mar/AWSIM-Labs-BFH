@@ -1,5 +1,9 @@
 // Creates a simple road segment mesh based on sampled cubic Bezier curves.
 // 
+// TODO: 
+// - create collider
+// - make sampling rate of material dynamic (adjust with curve length)
+// 
 // Author: Ammar Hammad
 
 using UnityEngine;

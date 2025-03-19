@@ -8,6 +8,7 @@
 // 
 // ISSUES and Improvement ideas: 
 // - make the bezier curves editable in Scene with gizmos
+// - make lane / road width dynamic
 //
 // Author: Ammar Hammad
 // 
