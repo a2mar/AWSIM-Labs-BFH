@@ -82,10 +82,10 @@ public class BezierRoadMesh : MonoBehaviour
         if (meshRenderer == null) meshRenderer = gameObject.AddComponent<MeshRenderer>();
 
         meshFilter.mesh = mesh;
-        // automatically search for "Road-Realistic.mat" in Resources
+        // automatically search for "Road-Realistic-3.mat" in Resources
         if (roadMaterial == null)
         {
-            roadMaterial = Resources.Load<Material>("Materials/BezierRoad/Road-Realistic");
+            roadMaterial = Resources.Load<Material>("Materials/BezierRoad/Road-Realistic-3");
 
             if (roadMaterial == null)
             {
