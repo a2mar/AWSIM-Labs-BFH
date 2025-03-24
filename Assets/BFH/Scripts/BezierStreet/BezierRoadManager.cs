@@ -3,7 +3,10 @@
 // respective generated road mesh.
 //
 // TODO:
-//
+//  - implement a new adjustment / interpolation / secondary scattering algorithm
+//  - clean up RandomizeBezierKnots() {...}
+//  - clean up state management
+//  - 
 // 
 // Author: Ammar Hammad
 
@@ -115,7 +118,7 @@ public class BezierRoadManager : MonoBehaviour
             // primary random scattering of a fraction of Bezier segments
             RandomizeBezierKnots();
             // adjust all other knots to the randomized knots, relaxing the curve, but add secondary random scattering
-            AdjustKnotsWithScattering();
+            AdjustKnotsWithScatteringV2();
         }
 
 
@@ -161,16 +164,19 @@ public class BezierRoadManager : MonoBehaviour
             gap /= 2;
             amountOfPoints = (segmentCount / gap) - 1;
         }
-        primaryScatterPoints = new int[amountOfPoints];
-        System.Random random = new System.Random();
-        int start = Math.Max((int)(random.NextDouble() * (gap - 1)), 3);
+        // primaryScatterPoints = new int[amountOfPoints];
+        primaryScatterPoints = new int[] { 3, 11, 19 };
 
-        for (int i = 0; i < amountOfPoints; i++)
-        {
-            primaryScatterPoints[i] = i * gap + start;
-            // primaryScatterPoints[i] = i * gap + 3;
-            // Debug.LogError($"the scatter point determined is: {primaryScatterPoints[i]}");
-        }
+        // DEBUG: only deactivated for testing
+        // System.Random random = new System.Random();
+        // int start = Math.Max((int)(random.NextDouble() * (gap - 1)), 3);
+
+        // for (int i = 0; i < amountOfPoints; i++)
+        // {
+        //     primaryScatterPoints[i] = i * gap + start;
+        //     // primaryScatterPoints[i] = i * gap + 3;
+        //     Debug.LogError($"the scatter point determined is: {primaryScatterPoints[i]}");
+        // }
 
     }
 
@@ -313,10 +319,11 @@ public class BezierRoadManager : MonoBehaviour
             // calculate the displacement factor from random deviations
             float deviation = (100.0f + randomNumbers[i]) / 100.0f;
 
+            // add random deviation to end knot of segment
             bezierKnots[i][3] = bezierKnots[i][3] * deviation;
 
+            // the start knot must mirror the end knot of the previous segment
             bezierKnots[i][0] = bezierKnots[(segmentCount + i - 1) % segmentCount][3];
-            bezierCurves[i].ApplyMainBezierKnots(bezierKnots[i]);
         }
     }
 
@@ -337,7 +344,7 @@ public class BezierRoadManager : MonoBehaviour
             else if (i == primaryScatterPoints.Length) targetSegments = segmentCount - 2 - primaryScatterPoints[i - 1];
             else targetSegments = primaryScatterPoints[i] - primaryScatterPoints[i - 1] - 1;
 
-        
+
             // Debug.Log($"The i = {i} -th iteration determined this amount of segments: {targetSegments}");
             // Debug.Log($"The type of targetSegment is: {targetSegments.GetType()}");
 
@@ -347,12 +354,12 @@ public class BezierRoadManager : MonoBehaviour
                 // interpolate the segments form the start to the first randomized point
                 InterPolateBezierSegments(0, primaryScatterPoints[i] + 2, targetSegments + 1);
             }
-            // else if (i == primaryScatterPoints.Length)
-            // {
-            //     // DEBUG skip this
-            //     // interpolate the segments form the last randomized point to the end
-            //     InterPolateBezierSegments(primaryScatterPoints[i - 1] + 1, 0, targetSegments);
-            // }
+            else if (i == primaryScatterPoints.Length)
+            {
+                // DEBUG skip this
+                // interpolate the segments form the last randomized point to the end
+                InterPolateBezierSegments(primaryScatterPoints[i - 1] + 1, 0, targetSegments);
+            }
             else if (i != primaryScatterPoints.Length)
             {
                 // interpolate the segments between the last randomized point and the current
@@ -362,34 +369,10 @@ public class BezierRoadManager : MonoBehaviour
                     targetSegments + 1);
             }
 
-            // if (i == 0)
-            // {
-            //     for (int j = 0; j < primaryScatterPoints[i]; j++)
-            //     {
-            //         // calculate the displacement factor for bezier segment j for intersecting 
-            //         // the line between segment 0's START knot and the FIRST randomized segment's END knot.
-            //         AdjustedCubicBezierKnots(j, bezierKnots[0][0], bezierKnots[primaryScatterPoints[i]][3]);
-            //     }
-            // }
-            // // else if (i == primaryScatterPoints.Length)
-            // // {
-            // //     for (int j = primaryScatterPoints[i - 1] + 1; j < segmentCount; j++)
-            // //     {
-            // //         // calculate the displacement factor for bezier segment j for intersecting 
-            // //         // the line between the LAST randomized segment's END knot and segment 0's START knot.
-            // //     }
-            // // }
-            // // else
-            // // {
-            // //     for (int j = primaryScatterPoints[i - 1] + 1; j < primaryScatterPoints[i]; j++)
-            // //     {
-            // //         // calculate the displacement factor for bezier segment j for intersecting 
-            // //         // the line between the (i-1)-th randomized segment's END knot and the i-th randomized segment's END knot.
-            // //     }
-            // // }
 
         }
     }
+
     /// <summary>
     /// Create the new coordinates in the infinite set of points between start and end, defined as p' = start + t(end - start)
     /// Always uses the first control knot of the start and end Bezier curves, referenced by with an index value.
@@ -438,13 +421,78 @@ public class BezierRoadManager : MonoBehaviour
             // apply changes
             bezierCurves[start + i - 1].ApplyMainBezierKnots(bezierKnots[start + i - 1]);
             bezierCurves[start + i].ApplyMainBezierKnots(bezierKnots[start + i]);
-        } 
+        }
 
 
     }
-    void AdjustedCubicBezierKnots(int segment)
-    {
 
+    /// <summary>
+    /// Alternative, more direct variant of Bezier segment adjustment
+    /// </summary>
+    void AdjustKnotsWithScatteringV2()
+    {
+        for (int i = 0; i <= primaryScatterPoints.Length; i++)
+        {
+            int knotCount;
+            // CALCULATE amount of knots per interval
+            // basic formula: intermediary segments have 4 knots, end segments have 3 knots to be adjusted
+            // special case first intervall (between segment 0's start knot and first randomly scattered segments's end knot) 
+            if (i == 0)
+            {
+                knotCount = (primaryScatterPoints[i] - 1) * 3 + 6;//4 + 8;//2 * 3;
+                InterpolateV2(0, primaryScatterPoints[i] + 1, knotCount);
+            }
+            // special case last interval (between last randomly scattered segments's end knot and the last segment's end knot)
+            else if (i == primaryScatterPoints.Length)
+            {
+                // instead of the end knot of the last randomly scattered segment, use the geometrically identical knot 
+                // of the next segment (next segment's start knot)
+                knotCount = (segmentCount - (primaryScatterPoints[i - 1] + 1) - 2) * 3 + 6;//4 + 8;// 2 * 3;
+                InterpolateV2(primaryScatterPoints[i - 1] + 1, segmentCount - 1, knotCount);
+            }
+            // all normal cases (between two subsequent randomized end knots)
+            else
+            {
+                // instead of the end knot of the previous randomly scattered segment, use the geometrically identical knot 
+                // of its next segment (next segment's start knot)
+                knotCount = ((primaryScatterPoints[i]) - (primaryScatterPoints[i - 1] + 1) - 1) * 3 + 6;//4 + 8;//2 * 3;
+                InterpolateV2(primaryScatterPoints[i - 1] + 1, primaryScatterPoints[i], knotCount);
+            }
+
+            // debug the knotCount first:
+            Debug.Log($"the knotCount is: {knotCount}");
+        }
+    }
+
+    void InterpolateV2(int start, int end, int knotCount)
+    {
+        // Define the sampling factor
+        float sampling = 1f / (knotCount - 1);  // last point will have factor 1
+
+        // Calculate vector between start and end
+        Vector3 distance = bezierKnots[end][0] - bezierKnots[start][0];
+
+        // Iterate over the bezier knots
+        for (int i = 0; i < knotCount; i++)
+        {
+            // Calculate the index of the current segment
+            int segIndex = start + (i / 4);
+
+            // Calculate the new position of the knot
+            bezierKnots[segIndex][i % 4] = bezierKnots[start][0] + i * sampling * distance;
+
+            if (i % 4 == 3)
+            {
+                // 1st bezier knot of next segment is always the same as 3rd knot of current
+                bezierKnots[segIndex + 1][0] = bezierKnots[segIndex][3];
+            }
+
+            // Update segment if end of segment or last knot is reached
+            if (i % 4 == 3 || i == knotCount - 1)
+            {
+                bezierCurves[segIndex].ApplyMainBezierKnots(bezierKnots[segIndex]);
+            }
+        }
     }
 
 
