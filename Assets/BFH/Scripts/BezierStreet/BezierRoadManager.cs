@@ -102,7 +102,6 @@ public class BezierRoadManager : MonoBehaviour
     void UpdateRoad()
     {
         if (!StateChanged() && scatteringRange != 0) return;
-        if (scatteringRange == 0) Debug.LogError("THIS IS ==================== 00000");
 
         // create Vectors for the Bezier curves and update the Bezier Curve Components
         InitializeBezierKnots();
@@ -139,7 +138,6 @@ public class BezierRoadManager : MonoBehaviour
         // allocate each row to hold 4 Vector3 elements (cubic Bezier curve's control knots)
         for (int i = 0; i < segmentCount; i++)
         {
-            Vector3[] previous = i > 0 ? bezierKnots[i - 1] : null;
             // bezierKnots[i] = CubicBezierKnots(previous);
             bezierKnots[i] = CircularCubicBezierKnotsV2(i);
             // apply to the corresponding Bezier Curve Components
@@ -171,7 +169,7 @@ public class BezierRoadManager : MonoBehaviour
         {
             primaryScatterPoints[i] = i * gap + start;
             // primaryScatterPoints[i] = i * gap + 3;
-            Debug.LogError($"the scatter point determined is: {primaryScatterPoints[i]}");
+            // Debug.LogError($"the scatter point determined is: {primaryScatterPoints[i]}");
         }
 
     }
@@ -340,8 +338,8 @@ public class BezierRoadManager : MonoBehaviour
             else targetSegments = primaryScatterPoints[i] - primaryScatterPoints[i - 1] - 1;
 
         
-            Debug.Log($"The i = {i} -th iteration determined this amount of segments: {targetSegments}");
-            Debug.Log($"The type of targetSegment is: {targetSegments.GetType()}");
+            // Debug.Log($"The i = {i} -th iteration determined this amount of segments: {targetSegments}");
+            // Debug.Log($"The type of targetSegment is: {targetSegments.GetType()}");
 
             // interpolate the segments between the randomized knots
             if (i == 0)
@@ -355,14 +353,14 @@ public class BezierRoadManager : MonoBehaviour
             //     // interpolate the segments form the last randomized point to the end
             //     InterPolateBezierSegments(primaryScatterPoints[i - 1] + 1, 0, targetSegments);
             // }
-            // else
-            // {
-            //     // interpolate the segments between the last randomized point and the current
-            //     InterPolateBezierSegments(
-            //         primaryScatterPoints[i - 1] + 1,
-            //         primaryScatterPoints[i] + 1,
-            //         targetSegments);
-            // }
+            else if (i != primaryScatterPoints.Length)
+            {
+                // interpolate the segments between the last randomized point and the current
+                InterPolateBezierSegments(
+                    primaryScatterPoints[i - 1] + 1,
+                    primaryScatterPoints[i] + 2,
+                    targetSegments + 1);
+            }
 
             // if (i == 0)
             // {
