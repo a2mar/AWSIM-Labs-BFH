@@ -165,19 +165,19 @@ public class BezierRoadManager : MonoBehaviour
             gap /= 2;
             amountOfPoints = (segmentCount / gap) - 1;
         }
-        // primaryScatterPoints = new int[amountOfPoints];
-        primaryScatterPoints = new int[] { 3, 11, 19 };
+        primaryScatterPoints = new int[amountOfPoints];
+        // primaryScatterPoints = new int[] { 3, 11, 19 };
 
         // DEBUG: only deactivated for testing
-        // System.Random random = new System.Random();
-        // int start = Math.Max((int)(random.NextDouble() * (gap - 1)), 3);
+        System.Random random = new System.Random();
+        int start = Math.Max((int)(random.NextDouble() * (gap - 1)), 3);
 
-        // for (int i = 0; i < amountOfPoints; i++)
-        // {
-        //     primaryScatterPoints[i] = i * gap + start;
-        //     // primaryScatterPoints[i] = i * gap + 3;
-        //     Debug.LogError($"the scatter point determined is: {primaryScatterPoints[i]}");
-        // }
+        for (int i = 0; i < amountOfPoints; i++)
+        {
+            primaryScatterPoints[i] = i * gap + start;
+            // primaryScatterPoints[i] = i * gap + 3;
+            // Debug.LogError($"the scatter point determined is: {primaryScatterPoints[i]}");
+        }
 
     }
 
