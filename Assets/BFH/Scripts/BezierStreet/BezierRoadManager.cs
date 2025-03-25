@@ -121,7 +121,8 @@ public class BezierRoadManager : MonoBehaviour
             AdjustKnotsWithScatteringV2();
         }
 
-
+        // save state
+        SaveState();
         // generate the initial road mesh
         UpdateRoadMesh();
     }
@@ -322,6 +323,10 @@ public class BezierRoadManager : MonoBehaviour
             // add random deviation to end knot of segment
             bezierKnots[i][3] = bezierKnots[i][3] * deviation;
 
+            // also add deviation to the neighbouring knots
+            bezierKnots[i][2] = bezierKnots[i][2] * deviation;
+            bezierKnots[(segmentCount + i + 1) % segmentCount][1] = bezierKnots[(segmentCount + i + 1) % segmentCount][1] * deviation;
+
             // the start knot must mirror the end knot of the previous segment
             bezierKnots[i][0] = bezierKnots[(segmentCount + i - 1) % segmentCount][3];
         }
@@ -433,7 +438,6 @@ public class BezierRoadManager : MonoBehaviour
     {
         for (int i = 0; i <= primaryScatterPoints.Length; i++)
         {
-            int segments;
             // CALCULATE amount of knots per interval
             // basic formula: intermediary segments have 4 knots, end segments have 3 knots to be adjusted
             // special case first intervall (between segment 0's start knot and first randomly scattered segments's end knot) 
@@ -478,7 +482,7 @@ public class BezierRoadManager : MonoBehaviour
     {
         // calculate the number of full curve to be adjusted (subtract the incomplete curves at the end, see scheme)
         int segments = end - start - 2;
-        Debug.Log($"the knotCount is: {segments}");
+        // Debug.Log($"the knotCount is: {segments}");
 
         // define the sampling factor
         float sampling = 1f / (segments * 3 + 2 + 1);  // add 2 for {extra knots} at ends, add 1 for
