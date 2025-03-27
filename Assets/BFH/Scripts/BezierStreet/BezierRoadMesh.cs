@@ -36,7 +36,7 @@ public class BezierRoadMesh : MonoBehaviour
         int[] triangles = new int[(leftPoints.Length - 1) * 6];
 
         // define repeats:
-        float textureRepeatsY = 10.0f;
+        float textureRepeatsY = 1.0f;
 
         for (int i = 0; i < leftPoints.Length; i++)
         {
