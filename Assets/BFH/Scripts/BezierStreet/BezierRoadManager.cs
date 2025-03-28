@@ -4,8 +4,10 @@
 //
 // TODO:
 //  - implement secondary scattering algorithm
+//  - adjust primary scattering
 //  
 // ISSUES:
+//  - different lengths of curve segments after interpolation
 //  - high coupling through the use of many global variables
 // 
 // Author: Ammar Hammad
@@ -521,20 +523,7 @@ public class BezierRoadManager : MonoBehaviour
 
         // calculate vector between start and end
         // DEBUGGING
-        Vector3 distance;
-        try
-        {
-            distance = bezierKnots[end - 1][2] - bezierKnots[start][1];
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"caught exception!!! Start is {start}, end is {end}, exception is {e}");
-        }
-        finally
-        {
-            distance = bezierKnots[end - 1][2] - bezierKnots[start][1];
-        }
-
+        Vector3 distance = bezierKnots[end - 1][2] - bezierKnots[start][1];
 
         // calculate the knots 2 and 3 from the start curve
         bezierKnots[start][2] = bezierKnots[start][1] + 1 * sampling * distance;
@@ -554,8 +543,6 @@ public class BezierRoadManager : MonoBehaviour
         bezierKnots[end - 1][0] = bezierKnots[start][1] + (2 + 3 * segments) * sampling * distance;
         bezierKnots[end - 1][1] = bezierKnots[start][1] + (3 + 3 * segments) * sampling * distance;
     }
-
-
 
     void AssignComponents()
     {
