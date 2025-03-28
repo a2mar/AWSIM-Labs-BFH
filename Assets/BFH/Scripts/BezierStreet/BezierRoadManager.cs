@@ -15,6 +15,8 @@
 using System;
 using UnityEngine;
 using System.Linq;
+using UnityEngine.UIElements;
+
 
 
 
@@ -129,8 +131,12 @@ public class BezierRoadManager : MonoBehaviour
             DetermineRandomBezierSegments();
             // generate deviation factors for random scattering
             GenerateRandomNumbers();
+
+            // AdjustRandomization();
+
+
             // primary random scattering of a fraction of Bezier segments
-            RandomizeBezierKnots();
+            ApplyRandomToBezierKnots();
             // adjust all other knots to the randomized knots, relaxing the curve, but add secondary random scattering
             AdjustKnotsWithScatteringV2();
         }
@@ -210,7 +216,7 @@ public class BezierRoadManager : MonoBehaviour
         {
             // determine if the segment has PRIMARY randomization
             bool primaryRandomization = primaryScatterPoints.Contains(i);
-            
+
             // determine if segment has SECONDARY randomization (no randomization on segments neighbouring primarily randomized segments) 
             // modulus for array boundary safety
             bool secondaryRandomization =
@@ -236,6 +242,24 @@ public class BezierRoadManager : MonoBehaviour
                 // no randomization
                 randomNumbers[i] = 0;
             }
+        }
+    }
+
+    /// <summary>
+    /// Adjust radomized deviations to ensure even resolution throughout the road system.
+    /// Uses the randomized numbers withing the scattering range
+    /// </summary>
+    private void AdjustRandomization()
+    {
+        // array for the resolutions ((distance of 2 consequitive primarily scatterd curves) / # of curves (segments))
+        float[] res = new float[primaryScatterPoints.Length + 1];  // + 1 for the extra invervall from the fixed and to curve 0 
+
+        int[][] indexPairs = IndexPairsFromPrimaryS();
+
+        // iterate over the array and calculate the resolution
+        for (int i = 0; i < primaryScatterPoints.Length; i++)
+        {
+
         }
     }
 
@@ -345,7 +369,7 @@ public class BezierRoadManager : MonoBehaviour
     /// <summary>
     /// Randomize Bezier end knots based on the probability for randomization and the road type
     /// </summary>
-    void RandomizeBezierKnots()
+    void ApplyRandomToBezierKnots()
     {
         System.Random random = new System.Random();
 
@@ -470,37 +494,18 @@ public class BezierRoadManager : MonoBehaviour
     /// </summary>
     void AdjustKnotsWithScatteringV2()
     {
+        // create array for index pairs (start and end)
+        int[][] indexPairs = IndexPairsFromPrimaryS();
+        for (int i = 0; i < indexPairs.Length; i++)
+        {
+            Debug.Log($"the indexpair i={i}, has {indexPairs[i][0]} and {indexPairs[i][1]}");   
+        }
+
         for (int i = 0; i <= primaryScatterPoints.Length; i++)
         {
-            // CALCULATE amount of knots per interval
-            // basic formula: intermediary segments have 4 knots, end segments have 3 knots to be adjusted
-            // special case first intervall (between segment 0's start knot and first randomly scattered segments's end knot) 
-            if (i == 0)
-            {
-                // segments = (primaryScatterPoints[i] - 1);//* 3 + 6;//4 + 8;//2 * 3;
-                // InterpolateV2(0, primaryScatterPoints[i] + 1, knotCount);
-                InterpolateV2(0, primaryScatterPoints[i] + 1);
-            }
-            // special case last interval (between last randomly scattered segments's end knot and the last segment's end knot)
-            else if (i == primaryScatterPoints.Length)
-            {
-                // instead of the end knot of the last randomly scattered segment, use the geometrically identical knot 
-                // of the next segment (next segment's start knot)
-                // segments = (segmentCount - (primaryScatterPoints[i - 1] + 1) - 2); //* 3 + 6;//4 + 8;// 2 * 3;
-                InterpolateV2((segmentCount + primaryScatterPoints[i - 1] + 1) % segmentCount, segmentCount);
-            }
-            // all normal cases (between two subsequent randomized end knots)
-            else
-            {
-                // instead of the end knot of the previous randomly scattered segment, use the geometrically identical knot 
-                // of its next segment (next segment's start knot)
-                // segments = ((primaryScatterPoints[i] + 1) - (primaryScatterPoints[i - 1] + 1) - 2); //* 3 + 6;//4 + 8;//2 * 3;
-                InterpolateV2(primaryScatterPoints[i - 1] + 1, primaryScatterPoints[i] + 1);
-            }
-
-            // debug the knotCount first:
-            // Debug.Log($"the knotCount is: {segments}");
+            InterpolateV2(indexPairs[i][0], indexPairs[i][1]);
         }
+        
         // update all Bezier segment components
         for (int i = 0; i < segmentCount; i++) bezierCurves[i].ApplyMainBezierKnots(bezierKnots[i]);
     }
@@ -542,6 +547,43 @@ public class BezierRoadManager : MonoBehaviour
         // calculate the knots 0 and 1 from the curve [end - 1]
         bezierKnots[end - 1][0] = bezierKnots[start][1] + (2 + 3 * segments) * sampling * distance;
         bezierKnots[end - 1][1] = bezierKnots[start][1] + (3 + 3 * segments) * sampling * distance;
+    }
+
+    /// <summary>
+    /// calculates and return the Bezier curve index pairs for all the intervalls between the Bezier knots targeted with the randomization.
+    /// The calclated indeces are always the the index of the Bezier curve whose first control knot has been randomized,
+    /// except for the the first curve segment. It the intervall ends at the first segment, segmentCount instead of 0 is returned.
+    /// </summary>
+    /// <returns>array with index pairs</returns>
+    private int[][] IndexPairsFromPrimaryS()
+    {
+        // index pair array
+        int[][] indexPairs = new int[primaryScatterPoints.Length + 1][];
+
+        
+        // calculate the index pairs (strting from the curve )
+        for (int i = 0; i <= primaryScatterPoints.Length; i++)
+        {
+            // special case first intervall (between segment 0's start knot and first randomly scattered segments's end knot) 
+            if (i == 0)
+            {
+                indexPairs[i] = new int[]{0, primaryScatterPoints[i] + 1};
+            }
+            // special case last interval (between last randomly scattered segments's end knot and the last segment's end knot)
+            else if (i == primaryScatterPoints.Length)
+            {
+                indexPairs[i] = new int[]{(segmentCount + primaryScatterPoints[i - 1] + 1) % segmentCount, segmentCount};
+            }
+            // normal case (between two subsequent randomized end knots)
+            else
+            {
+                indexPairs[i] = new int[]{primaryScatterPoints[i - 1] + 1, primaryScatterPoints[i] + 1};
+            }
+
+            // Debug.Log($"the knotCount is: {segments}");
+        }
+
+        return indexPairs;
     }
 
     void AssignComponents()
