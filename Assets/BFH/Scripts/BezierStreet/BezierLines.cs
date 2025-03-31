@@ -14,7 +14,6 @@
 // 
 
 using System.Net;
-using autoware_vehicle_msgs.msg;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Splines;
@@ -137,7 +136,7 @@ public class BezierCurveExample : MonoBehaviour
         Vector3 normal = new Vector3(0, 1, 0);
 
         // define scaling factor to adjust lane width
-        
+
 
         // CALCULATE EUQIDISTANT LINES LEFT AND RIGHT OF THE BEZIER CURVE
         // for each sampled curve point, create the opposing cross products to obtain points left and right of the curve
@@ -271,4 +270,3 @@ public class BezierCurveExample : MonoBehaviour
     public Vector3[] GetLeftPoints() => leftPoints;  // for debugging, sampledFittedBezierL;
     public Vector3[] GetRightPoints() => rightPoints;  // debugging, sampledFittedBezierR;
 }
-

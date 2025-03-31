@@ -78,10 +78,23 @@ public class BezierRoadMesh : MonoBehaviour
 
     void AssignMeshComponents()
     {
-        if (meshFilter == null) meshFilter = gameObject.AddComponent<MeshFilter>();
-        if (meshRenderer == null) meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        //if (meshFilter == null) meshFilter = gameObject.AddComponent<MeshFilter>();
+        //if (meshRenderer == null) meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        if (meshFilter == null)
+        {
+            meshFilter = gameObject.GetComponent<MeshFilter>();
+            if (meshFilter == null)
+                meshFilter = gameObject.AddComponent<MeshFilter>();
+        }
 
-        meshFilter.mesh = mesh;
+        if (meshRenderer == null)
+        {
+            meshRenderer = gameObject.GetComponent<MeshRenderer>();
+            if (meshRenderer == null)
+                meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        }
+
+        //meshFilter.mesh = mesh;
         // automatically search for "Road-Realistic-3.mat" in Resources
         if (roadMaterial == null)
         {
@@ -99,7 +112,7 @@ public class BezierRoadMesh : MonoBehaviour
         }
     }
 
-        void CreateBoundingBox(Vector3[] vertices)
+    void CreateBoundingBox(Vector3[] vertices)
     {
         if (vertices == null || vertices.Length == 0) return;
 
@@ -117,7 +130,9 @@ public class BezierRoadMesh : MonoBehaviour
 
         if (boxCollider == null)
         {
-            boxCollider = gameObject.AddComponent<BoxCollider>();
+            boxCollider = gameObject.GetComponent<BoxCollider>();
+            if (boxCollider == null)
+                boxCollider = gameObject.AddComponent<BoxCollider>();
         }
 
         boxCollider.center = this.transform.InverseTransformPoint(center);

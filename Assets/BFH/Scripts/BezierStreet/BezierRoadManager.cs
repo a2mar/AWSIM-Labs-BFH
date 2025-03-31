@@ -60,9 +60,14 @@ public class BezierRoadManager : MonoBehaviour
     public RoadType roadType = RoadType.Simple;
 
     // state variables
+    [SerializeField, HideInInspector]
     private float _last_scatRange, _last_secScatRange;
+    [SerializeField, HideInInspector]
     private RoadType _last_roadType;
+    [SerializeField, HideInInspector]
+    private bool initialized;
 
+    // global variables for randomization
     private float[] randomNumbers;
     private int[] primaryScatterPoints;
 
@@ -71,7 +76,7 @@ public class BezierRoadManager : MonoBehaviour
     /// </summary>
     void Awake()
     {
-        if (Application.isPlaying)
+        if (Application.isPlaying || initialized)
         {
             return;  // Skip execution in Play Mode
         }
@@ -90,6 +95,8 @@ public class BezierRoadManager : MonoBehaviour
         InitializeBezierKnots();
         // generate the initial road mesh
         UpdateRoadMesh();
+        // set initialized to true
+        initialized = true;
     }
 
     void OnValidate()
@@ -118,8 +125,12 @@ public class BezierRoadManager : MonoBehaviour
     /// </summary>
     void UpdateRoad()
     {
+        // create BezierCurveExample and BezierRoadMesh dynamically
+        AssignComponents();
         // deals with special case that scatteringRange == 0
         if (!StateChanged() && scatteringRange != 0) return;
+
+        // PASSED FOR UPDATES
 
         // create Vectors for the Bezier curves and update the Bezier Curve Components
         InitializeBezierKnots();
@@ -498,14 +509,14 @@ public class BezierRoadManager : MonoBehaviour
         int[][] indexPairs = IndexPairsFromPrimaryS();
         for (int i = 0; i < indexPairs.Length; i++)
         {
-            Debug.Log($"the indexpair i={i}, has {indexPairs[i][0]} and {indexPairs[i][1]}");   
+            //Debug.Log($"the indexpair i={i}, has {indexPairs[i][0]} and {indexPairs[i][1]}");
         }
 
         for (int i = 0; i <= primaryScatterPoints.Length; i++)
         {
             InterpolateV2(indexPairs[i][0], indexPairs[i][1]);
         }
-        
+
         // update all Bezier segment components
         for (int i = 0; i < segmentCount; i++) bezierCurves[i].ApplyMainBezierKnots(bezierKnots[i]);
     }
@@ -560,24 +571,24 @@ public class BezierRoadManager : MonoBehaviour
         // index pair array
         int[][] indexPairs = new int[primaryScatterPoints.Length + 1][];
 
-        
+
         // calculate the index pairs (strting from the curve )
         for (int i = 0; i <= primaryScatterPoints.Length; i++)
         {
             // special case first intervall (between segment 0's start knot and first randomly scattered segments's end knot) 
             if (i == 0)
             {
-                indexPairs[i] = new int[]{0, primaryScatterPoints[i] + 1};
+                indexPairs[i] = new int[] { 0, primaryScatterPoints[i] + 1 };
             }
             // special case last interval (between last randomly scattered segments's end knot and the last segment's end knot)
             else if (i == primaryScatterPoints.Length)
             {
-                indexPairs[i] = new int[]{(segmentCount + primaryScatterPoints[i - 1] + 1) % segmentCount, segmentCount};
+                indexPairs[i] = new int[] { (segmentCount + primaryScatterPoints[i - 1] + 1) % segmentCount, segmentCount };
             }
             // normal case (between two subsequent randomized end knots)
             else
             {
-                indexPairs[i] = new int[]{primaryScatterPoints[i - 1] + 1, primaryScatterPoints[i] + 1};
+                indexPairs[i] = new int[] { primaryScatterPoints[i - 1] + 1, primaryScatterPoints[i] + 1 };
             }
 
             // Debug.Log($"the knotCount is: {segments}");
@@ -588,6 +599,21 @@ public class BezierRoadManager : MonoBehaviour
 
     void AssignComponents()
     {
+        // prevent re-creation by checking for existing child objects
+        if (transform.childCount >= segmentCount)
+        {
+            bezierCurves = GetComponentsInChildren<BezierCurveExample>();
+            roadMeshes = GetComponentsInChildren<BezierRoadMesh>();
+            bezierCurveObjects = bezierCurves.Select(c => c.gameObject).ToArray();
+            roadMeshObjects = roadMeshes.Select(m => m.gameObject).ToArray();
+            roadSegments = new GameObject[segmentCount];
+            for (int i = 0; i < segmentCount; i++)
+            {
+                roadSegments[i] = bezierCurveObjects[i].transform.parent.gameObject;
+            }
+            return; // Already created
+        }
+
         // initate all arrays
         bezierCurves = new BezierCurveExample[segmentCount];
         roadMeshes = new BezierRoadMesh[segmentCount];
@@ -630,4 +656,3 @@ public class BezierRoadManager : MonoBehaviour
     }
 
 }
-
