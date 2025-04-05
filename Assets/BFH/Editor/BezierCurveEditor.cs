@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 
-[CustomEditor(typeof(BezierCurveExample))]
+[CustomEditor(typeof(BezierCurveGroup))]
 public class BezierCurveEditor : Editor
 {
     public override void OnInspectorGUI()
@@ -10,7 +10,7 @@ public class BezierCurveEditor : Editor
         DrawDefaultInspector();
 
         // Reference the target script
-        BezierCurveExample script = (BezierCurveExample)target;
+        BezierCurveGroup script = (BezierCurveGroup)target;
 
         // Section 1: Curve Calculation
         EditorGUILayout.Space();
