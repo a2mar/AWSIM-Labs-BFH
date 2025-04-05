@@ -84,7 +84,7 @@ public class BezierRoadManager : MonoBehaviour
         // create BezierCurveGroup and BezierRoadMesh dynamically
         BezierComponentBuilder.AssignComponents(roadState);
         // create Vectors for the Bezier curves and update the Bezier Curve Components
-        BezierRoadGemetry.InitializeBezierKnots(roadState);
+        BezierRoadGeometry.InitializeBezierKnots(roadState);
         // generate the initial road mesh
         UpdateRoadMesh();
         // set initialized to true
@@ -126,19 +126,19 @@ public class BezierRoadManager : MonoBehaviour
         // PASSED FOR UPDATES
 
         // create Vectors for the Bezier curves and update the Bezier Curve Components
-        BezierRoadGemetry.InitializeBezierKnots(roadState);
+        BezierRoadGeometry.InitializeBezierKnots(roadState);
 
         // skip this if scatteringRange == 0, all random deviation will be 1
         if (scatteringRange != 0)
-        {
+        {           
             // determin which Bezier segments to randomize with primary scattering, according to road type
             RandomTools.DetermineRandomBezierSegments(roadState, roadType);
             // generate deviation factors for random scattering
             RandomTools.GenerateRandomNumbers(roadState, scatteringRange, secundaryScatteringRange);
             // primary random scattering of a fraction of Bezier segments
-            BezierRoadGemetry.ApplyRandomToBezierKnots(roadState);
+            BezierRoadGeometry.ApplyRandomToBezierKnots(roadState);
             // adjust all other knots to the randomized knots, relaxing the curve, but add secondary random scattering
-            BezierRoadGemetry.AdjustKnotsWithScattering(roadState);
+            BezierRoadGeometry.AdjustKnotsWithScattering(roadState);
         }
 
         // save state

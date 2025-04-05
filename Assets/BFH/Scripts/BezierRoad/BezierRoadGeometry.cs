@@ -1,7 +1,7 @@
 using UnityEngine;
 using System;
 
-public class BezierRoadGemetry
+public class BezierRoadGeometry
 {
     /// <summary>
     /// Creates Bezier Knots for all the road segments and applies them to the corresponding Bezier Curve Groups
