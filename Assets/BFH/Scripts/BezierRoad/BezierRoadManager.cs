@@ -131,8 +131,27 @@ public class BezierRoadManager : MonoBehaviour
         // skip this if scatteringRange == 0, all random deviation will be 1
         if (scatteringRange != 0)
         {           
-            // determin which Bezier segments to randomize with primary scattering, according to road type
-            RandomTools.DetermineRandomBezierSegments(roadState, roadType);
+            // // determin which Bezier segments to randomize with primary scattering, according to road type
+            // RandomTools.DetermineRandomBezierSegments(roadState, roadType);
+            
+            // NEW ALGORITHM Var A
+            // 1. Define the number of corners
+            // 2. Define position of random deviations for these corners
+            // 3. Define length of edges and the sum of their length
+            // 4. Claculate normalized edge length and deviations by using a fixed length of corners
+            // 5. Map the corner to indices of segments
+            
+            // NEW ALGORITHM Var B
+            // 1. Define the number n of corners
+            
+            // 2. Define length of segments, lenght of their sum and the length of edges
+            // 3. Define length of edges and the sum of their length
+            // 4. Define n-1 random deviations
+            // 5. Calculate n-1 positions of the corners (by solving for the angles iteratively, given the edge-length and deviation)
+            // 6. Calculate the n-th position (without deviation)
+
+
+            // AFTER MAPPING OF corner indices
             // generate deviation factors for random scattering
             RandomTools.GenerateRandomNumbers(roadState, scatteringRange, secundaryScatteringRange);
             // primary random scattering of a fraction of Bezier segments
