@@ -43,59 +43,62 @@ public class BezierRoadGeometry
         // copy frequently used state variables
         float radius = state.radius;
         int[] points = state.primaryScatterPoints;
-        Vector3[][] knots = state.bezierKnots;
+        // Vector3[][] knots = state.bezierKnots;
         // calculate the angle between the the deviated corners
         // USING Law of Cosinus: Cos(gamma) = (a^2 + b^2 + c^2) / (2 * a * b)
         // accumulated angle
         float gamma = 0f;
-        for (int i = 0; i < points.Length - 1; i++)
+        for (int i = 1; i < points.Length - 1; i++)
+        // for (int i = 0; i < points.Length - 1; i++)
         {
             // Debug.Log($"Deviations at point i = {deviations[i]}");
             float _radius_i = deviations[points[i]] * radius;
-            float _radius_ip1 = deviations[points[i + 1]] * radius;
-            float cos_gamma = (Mathf.Pow(_radius_i, 2f) + Mathf.Pow(_radius_ip1, 2f) - Mathf.Pow(segPerEdge[i] * segLen, 2f))
-            / (2 * _radius_i * _radius_ip1);
+            float _radius_im1 = deviations[points[i - 1]] * radius;
+            float cos_gamma = (Mathf.Pow(_radius_i, 2f) + Mathf.Pow(_radius_im1, 2f) - Mathf.Pow(segPerEdge[i] * segLen, 2f))
+            / (2 * _radius_i * _radius_im1);
 
             // Debug.Log($"cos_gamma is: {cos_gamma}");
             gamma += Mathf.Acos(cos_gamma);
             // Debug.Log($"gamma is {gamma}");
 
             // calculate the corner point
-            float _x = radius * Mathf.Cos(gamma);
-            float _z = radius * Mathf.Sin(gamma);
+            float _x = _radius_i * Mathf.Cos(gamma);
+            float _z = _radius_i * Mathf.Sin(gamma);
             Vector3 corner = new(_x, 0, _z);
             // Debug.LogError($"The calculated corner is at: {corner}");
-            knots[points[i]][3] = corner;
+            state.bezierKnots[points[i]][0] = corner;
             // knots[points[i + 1]][0] = corner;
-            knots[points[i] + 1][0] = corner;
+            state.bezierKnots[points[i] - 1][3] = corner;
         }
         // CALCULATE THE LAST cornerpoint from the last and second-last edges
         // distance between first corner point and third last cornerpoint
-        Vector3 _dirVec = (knots[0][0] - knots[cornerCount - 2][0]).normalized;
-        float _distance = _dirVec.magnitude;
-        // calculate beta with Law of Cosinus
-        float cos_beta = (Mathf.Pow(segPerEdge[cornerCount - 2] * segLen, 2f) - Mathf.Pow(segPerEdge[cornerCount - 1] * segLen, 2f) +
-        Mathf.Pow(_distance, 2f)) / (2 * segPerEdge[cornerCount - 2] * segLen * segPerEdge[cornerCount - 1] * segLen);
-        float beta = Mathf.Acos(cos_beta);
 
-        // PLACE THE LAST CORNER in the direction of the distance vector rotated by beta
-        // Calculate rotation
-        float sin = Mathf.Sin(beta);
-        float cos = Mathf.Cos(beta);
+        // DEBUG
+        // Vector3 _dirVec = (state.bezierKnots[0][0] - state.bezierKnots[cornerCount - 2][0]).normalized;
+        // float _distance = _dirVec.magnitude;
+        // // calculate beta with Law of Cosinus
+        // float cos_beta = (Mathf.Pow(segPerEdge[cornerCount - 2] * segLen, 2f) - Mathf.Pow(segPerEdge[cornerCount - 1] * segLen, 2f) +
+        // Mathf.Pow(_distance, 2f)) / (2 * segPerEdge[cornerCount - 2] * segLen * segPerEdge[cornerCount - 1] * segLen);
+        // float beta = Mathf.Acos(cos_beta);
 
-        // rotation in x-z-plane
-        Vector3 rotatedDir = new(
-            _dirVec.x * cos - _dirVec.z * sin,
-            0f,
-            _dirVec.x * sin + _dirVec.z * cos
-        );
+        // // PLACE THE LAST CORNER in the direction of the distance vector rotated by beta
+        // // Calculate rotation
+        // float sin = Mathf.Sin(beta);
+        // float cos = Mathf.Cos(beta);
 
-        // calculate rotated offset
-        Vector3 offset = rotatedDir.normalized * segPerEdge[cornerCount - 2] * segLen;
-        Vector3 finalCorner = knots[cornerCount - 2][0] + offset;
+        // // rotation in x-z-plane
+        // Vector3 rotatedDir = new(
+        //     _dirVec.x * cos - _dirVec.z * sin,
+        //     0f,
+        //     _dirVec.x * sin + _dirVec.z * cos
+        // );
 
-        // save to the corresponding knots
-        knots[cornerCount - 2][3] = knots[cornerCount - 1][0] = finalCorner;
+        // // calculate rotated offset
+        // Vector3 offset = rotatedDir.normalized * segPerEdge[cornerCount - 2] * segLen;
+        // Vector3 finalCorner = state.bezierKnots[cornerCount - 2][0] + offset;
+
+        // // save to the corresponding knots
+        // state.bezierKnots[cornerCount - 2][3] = state.bezierKnots[cornerCount - 1][0] = finalCorner;
     }
 
     /// <summary>
@@ -167,16 +170,10 @@ public class BezierRoadGeometry
     {
         // create array for index pairs (start and end)
         int[][] indexPairs = BezUtils.IndexPairsFromPrimaryS1(state);
-        for (int i = 0; i < indexPairs.Length; i++)
-        {
-            Debug.Log($"the indexpair i={i}, has {indexPairs[i][0]} and {indexPairs[i][1]}");
-        }
 
         for (int i = 0; i < state.primaryScatterPoints.Length; i++)
         {
-            Interpolate2(indexPairs[i][0], indexPairs[i][1], state.bezierKnots);
-            if (i < state.primaryScatterPoints.Length) Debug.Log($"primaryScatteringPoint[{i}] is {state.primaryScatterPoints[i]}");
-
+            //Interpolate2(indexPairs[i][0], indexPairs[i][1], state.bezierKnots);
         }
         // interpolate the segments of the last edge
         // Interpolate2(indexPairs[indexPairs.Length - 1][1], indexPairs[0][0], state.bezierKnots);
@@ -234,7 +231,6 @@ public class BezierRoadGeometry
     /// <param name="bezierKnots">mian Bezier controll knots for all segments</param>
     public static void Interpolate2(int start, int end, Vector3[][] bezierKnots)
     {
-        Debug.LogError($"the indices are: {start}, {end}");
         // calculate the number of full curve to be adjusted (subtract the incomplete curves at the end, see scheme)
         int segments = end - start - 1;
         // Debug.Log($"the knotCount is: {segments}");
