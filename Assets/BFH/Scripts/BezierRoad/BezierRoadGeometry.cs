@@ -236,34 +236,38 @@ public class BezierRoadGeometry
     /// <param name="bezierKnots">mian Bezier controll knots for all segments</param>
     public static void Interpolate2(int start, int end, Vector3[][] bezierKnots)
     {
+        // DEBUG
+        // Debug.LogError($"The indices: {start} and {end}");
         // calculate the number of full curve to be adjusted (subtract the incomplete curves at the end, see scheme)
         int segments = end - start - 1;
         // Debug.Log($"the knotCount is: {segments}");
 
         // define the sampling factor
-        float sampling = 1f / (segments * 3 + 3 + 2);  // add 3 and 2 for {extra knots} at ends
+        float sampling = 1f / (segments * 3 + 3);  // add 3 and 2 for {extra knots} at ends
 
         // calculate vector between start[0] and end[0] (or end-1[3])
         Vector3 distance = bezierKnots[end - 1][3] - bezierKnots[start][0];
 
         // calculate the knots 2 and 3 from the start curve
-        bezierKnots[start][1] = bezierKnots[start][1] + 1 * sampling * distance;
-        bezierKnots[start][2] = bezierKnots[start][1] + 2 * sampling * distance;
-        bezierKnots[start][3] = bezierKnots[start][1] + 3 * sampling * distance;
+        bezierKnots[start][1] = bezierKnots[start][0] + 1 * sampling * distance;
+        bezierKnots[start][2] = bezierKnots[start][0] + 2 * sampling * distance;
+        bezierKnots[start][3] = bezierKnots[start][0] + 3 * sampling * distance;
 
         // iterate over the bezier knots
         for (int i = 0; i < segments; i++)
         {
             // calculate the new position of the knots
-            bezierKnots[(start + 1) + i][0] = bezierKnots[start][1] + (3 + 3 * i) * sampling * distance;
-            bezierKnots[(start + 1) + i][1] = bezierKnots[start][1] + (4 + 3 * i) * sampling * distance;
-            bezierKnots[(start + 1) + i][2] = bezierKnots[start][1] + (5 + 3 * i) * sampling * distance;
-            bezierKnots[(start + 1) + i][3] = bezierKnots[start][1] + (6 + 3 * i) * sampling * distance;
+            bezierKnots[(start + 1) + i][0] = bezierKnots[start][0] + (3 + 3 * i) * sampling * distance;
+            bezierKnots[(start + 1) + i][1] = bezierKnots[start][0] + (4 + 3 * i) * sampling * distance;
+            bezierKnots[(start + 1) + i][2] = bezierKnots[start][0] + (5 + 3 * i) * sampling * distance;
+            bezierKnots[(start + 1) + i][3] = bezierKnots[start][0] + (6 + 3 * i) * sampling * distance;
         }
 
         // calculate the knots 0 and 1 from the curve [end - 1]
-        bezierKnots[end - 1][0] = bezierKnots[start][1] + (3 * segments) * sampling * distance;
-        bezierKnots[end - 1][1] = bezierKnots[start][1] + (1 + 3 * segments) * sampling * distance;
-        bezierKnots[end - 1][2] = bezierKnots[start][1] + (2 + 3 * segments) * sampling * distance;
+        bezierKnots[end - 1][0] = bezierKnots[start][0] + (3 * segments) * sampling * distance;
+        bezierKnots[end - 1][1] = bezierKnots[start][0] + (1 + 3 * segments) * sampling * distance;
+        bezierKnots[end - 1][2] = bezierKnots[start][0] + (2 + 3 * segments) * sampling * distance;
+        Debug.LogError($"Interpolating from {start} to {end}");
+
     }
 }
