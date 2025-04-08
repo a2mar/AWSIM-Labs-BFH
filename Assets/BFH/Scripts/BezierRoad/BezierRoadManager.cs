@@ -169,7 +169,7 @@ public class BezierRoadManager : MonoBehaviour
             // adjust all other knots to the randomized knots, relaxing the curve, but add secondary random scattering
             
             // DEBUG
-            BezierRoadGeometry.AdjustKnotsWithScattering(roadState);
+            BezierRoadGeometry.AdjustKnotsWithScattering(roadState, deviations);
         }
 
         // save state

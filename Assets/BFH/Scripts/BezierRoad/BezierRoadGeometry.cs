@@ -171,7 +171,7 @@ public class BezierRoadGeometry
     /// <summary>
     /// make Bezier Curves adjustment between primarily scattered Bezier knots
     /// </summary>
-    public static void AdjustKnotsWithScattering(BezierRoadState state)
+    public static void AdjustKnotsWithScattering(BezierRoadState state, float[] deviations)
     {
         // create array for index pairs (start and end)
         int[][] indexPairs = BezUtils.IndexPairsFromPrimaryS1(state);
@@ -179,9 +179,17 @@ public class BezierRoadGeometry
         for (int i = 0; i < state.primaryScatterPoints.Length; i++)
         {
             Interpolate(indexPairs[i][0], indexPairs[i][1], state.bezierKnots);
+            // create secondary scattering
+            ApplySecondaryScattering(indexPairs[i][0], indexPairs[i][1], state.bezierKnots, deviations);
         }
         // interpolate the segments of the last edge
         // Interpolate2(indexPairs[indexPairs.Length - 1][1], indexPairs[0][0], state.bezierKnots);
+
+
+        // for (int i = 0; i < state.randomNumbers.Length; i++)
+        // {
+        //     Debug.Log($"the {i}th random number is: {state.randomNumbers[i]}");
+        // }
 
         // update all Bezier segment components
         for (int i = 0; i < state.segmentCount; i++) state.bezierCurves[i].ApplyMainBezierKnots(state.bezierKnots[i]);
@@ -230,5 +238,33 @@ public class BezierRoadGeometry
         bezierKnots[end - 1][2] = bezierKnots[start][0] + (2 + 3 * segments) * sampling * distance;
         // Debug.LogError($"Interpolating from {start} to {end}");
 
+    }
+
+    public static void ApplySecondaryScattering(int start, int end, Vector3[][] bezierKnots, float[] deviations)
+    {
+        // itearate over the bezierKnot groups (Bezier curve representations) and deviate the intermediary knots
+        for (int i = 0; i < bezierKnots.Length; i++)
+        {
+            Vector3 normal = new(0f, 1f, 0f);
+
+            // 1st INTERMEDIARY KNOT: adjust to previous intermediate (for c1 continuity)
+            Vector3 prev2ndKnot = bezierKnots[BezUtils.CircularIndex(i - 1, bezierKnots.Length)][3]
+            - bezierKnots[BezUtils.CircularIndex(i - 1, bezierKnots.Length)][2];
+            bezierKnots[i][1] = bezierKnots[i][0] + prev2ndKnot;
+
+            // 2nd INTERMEDIARY KNOT
+            // adjust the deviation
+            float deviation = deviations[i] / 4;
+
+            // calculate the normal vector of the curve
+            Vector3 curvedir = (bezierKnots[i][3] - bezierKnots[i][2]).normalized;
+            Vector3 deviatedVec = Vector3.Cross(normal, curvedir).normalized * deviation;
+
+            // update the last intermediary knot
+            bezierKnots[i][2] = bezierKnots[i][2] + deviatedVec;
+        }
+        // make correction for first curve again
+        Vector3 prev2ndKnot0 = bezierKnots[bezierKnots.Length - 1][3] - bezierKnots[bezierKnots.Length - 1][2];
+        bezierKnots[0][1] = bezierKnots[0][0] + prev2ndKnot0;
     }
 }
