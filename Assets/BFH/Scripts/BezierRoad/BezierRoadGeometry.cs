@@ -178,7 +178,7 @@ public class BezierRoadGeometry
 
         for (int i = 0; i < state.primaryScatterPoints.Length; i++)
         {
-            Interpolate2(indexPairs[i][0], indexPairs[i][1], state.bezierKnots);
+            Interpolate(indexPairs[i][0], indexPairs[i][1], state.bezierKnots);
         }
         // interpolate the segments of the last edge
         // Interpolate2(indexPairs[indexPairs.Length - 1][1], indexPairs[0][0], state.bezierKnots);
@@ -190,51 +190,12 @@ public class BezierRoadGeometry
     /// <summary>
     /// Interpolates the position of the Bezier control knots of the given curves.
     /// <br/> Scheme:
-    /// \[start: {2}{3}]\[start + 1: (0)(1)(2)(3)]\ ... \[end - 2: (0)(1)(2)(3)]\[end - 1: (0){1}]\ 
-    /// </summary>
-    /// <param name="start">index of start curve</param>
-    /// <param name="end">index of end curve still included (penultimate)</param>
-    /// <param name="bezierKnots">mian Bezier controll knots for all segments</param>
-    public static void Interpolate(int start, int end, Vector3[][] bezierKnots)
-    {
-        // calculate the number of full curve to be adjusted (subtract the incomplete curves at the end, see scheme)
-        int segments = end - start - 2;
-        // Debug.Log($"the knotCount is: {segments}");
-
-        // define the sampling factor
-        float sampling = 1f / (segments * 3 + 2 + 1);  // add 2 for {extra knots} at ends, add 1 for
-
-        // calculate vector between start and end
-        Vector3 distance = bezierKnots[end - 1][2] - bezierKnots[start][1];
-
-        // calculate the knots 2 and 3 from the start curve
-        bezierKnots[start][2] = bezierKnots[start][1] + 1 * sampling * distance;
-        bezierKnots[start][3] = bezierKnots[start][1] + 2 * sampling * distance;
-
-        // iterate over the bezier knots
-        for (int i = 0; i < segments; i++)
-        {
-            // calculate the new position of the knots
-            bezierKnots[(start + 1) + i][0] = bezierKnots[start][1] + (2 + 3 * i) * sampling * distance;
-            bezierKnots[(start + 1) + i][1] = bezierKnots[start][1] + (3 + 3 * i) * sampling * distance;
-            bezierKnots[(start + 1) + i][2] = bezierKnots[start][1] + (4 + 3 * i) * sampling * distance;
-            bezierKnots[(start + 1) + i][3] = bezierKnots[start][1] + (5 + 3 * i) * sampling * distance;
-        }
-
-        // calculate the knots 0 and 1 from the curve [end - 1]
-        bezierKnots[end - 1][0] = bezierKnots[start][1] + (2 + 3 * segments) * sampling * distance;
-        bezierKnots[end - 1][1] = bezierKnots[start][1] + (3 + 3 * segments) * sampling * distance;
-    }
-
-    /// <summary>
-    /// Interpolates the position of the Bezier control knots of the given curves.
-    /// <br/> Scheme:
     /// \[start: {1}{2}{3}]\[start + 1: (0)(1)(2)(3)]\ ... \[end - 2: (0)(1)(2)(3)]\[end - 1: {0}{1}{2}]\ 
     /// </summary>
     /// <param name="start">index of start curve</param>
     /// <param name="end">index of end curve still included (penultimate)</param>
     /// <param name="bezierKnots">mian Bezier controll knots for all segments</param>
-    public static void Interpolate2(int start, int end, Vector3[][] bezierKnots)
+    public static void Interpolate(int start, int end, Vector3[][] bezierKnots)
     {
         // DEBUG
         // Debug.LogError($"The indices: {start} and {end}");
@@ -267,7 +228,7 @@ public class BezierRoadGeometry
         bezierKnots[end - 1][0] = bezierKnots[start][0] + (3 * segments) * sampling * distance;
         bezierKnots[end - 1][1] = bezierKnots[start][0] + (1 + 3 * segments) * sampling * distance;
         bezierKnots[end - 1][2] = bezierKnots[start][0] + (2 + 3 * segments) * sampling * distance;
-        Debug.LogError($"Interpolating from {start} to {end}");
+        // Debug.LogError($"Interpolating from {start} to {end}");
 
     }
 }
