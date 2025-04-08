@@ -130,33 +130,45 @@ public class BezierRoadManager : MonoBehaviour
 
         // skip this if scatteringRange == 0, all random deviation will be 1
         if (scatteringRange != 0)
-        {           
+        {
             // // determin which Bezier segments to randomize with primary scattering, according to road type
             // RandomTools.DetermineRandomBezierSegments(roadState, roadType);
-            
+
             // NEW ALGORITHM Var A
             // 1. Define the number of corners
             // 2. Define position of random deviations for these corners
             // 3. Define length of edges and the sum of their length
             // 4. Claculate normalized edge length and deviations by using a fixed length of corners
             // 5. Map the corner to indices of segments
-            
+
             // NEW ALGORITHM Var B
-            // 1. Define the number n of corners
-            
+            // 1. Define the number n of corners, in cluding start point of road (at x > 0, y == 0, z == 0)
+            // int cornerCount = RandomTools.CornerCount(roadState, roadType);
             // 2. Define length of segments, lenght of their sum and the length of edges
-            // 3. Define length of edges and the sum of their length
+            // DEBUG
+            float segLength = BezierRoadGeometry.SegmentLength(roadState);
+            // float roadLength = BezierRoadGeometry.RoadLength(roadState);
+
+            // 3. Define length of every individual edge
+            // DEBUG
+            int[] segmentPerEdge = RandomTools.SegmentsPerEdge(roadState, roadType);
             // 4. Define n-1 random deviations
+            // generate deviation factors for random scattering
+            // DEBUG
+            RandomTools.GenerateRandomNumbers(roadState, scatteringRange, secundaryScatteringRange);
             // 5. Calculate n-1 positions of the corners (by solving for the angles iteratively, given the edge-length and deviation)
+            // DEBUG
+            float[] deviations = RandomTools.Deviations(roadState);
+            BezierRoadGeometry.CalculateRoadCornerPositions(roadState, deviations, segmentPerEdge, segmentPerEdge.Length, segLength);
             // 6. Calculate the n-th position (without deviation)
 
 
             // AFTER MAPPING OF corner indices
-            // generate deviation factors for random scattering
-            RandomTools.GenerateRandomNumbers(roadState, scatteringRange, secundaryScatteringRange);
             // primary random scattering of a fraction of Bezier segments
-            BezierRoadGeometry.ApplyRandomToBezierKnots(roadState);
+            // BezierRoadGeometry.ApplyRandomToBezierKnots(roadState);
             // adjust all other knots to the randomized knots, relaxing the curve, but add secondary random scattering
+            
+            // DEBUG
             BezierRoadGeometry.AdjustKnotsWithScattering(roadState);
         }
 

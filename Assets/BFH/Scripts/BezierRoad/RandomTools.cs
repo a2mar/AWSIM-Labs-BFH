@@ -5,6 +5,43 @@ using static BezierRoadManager;
 
 public class RandomTools
 {
+    public static int CornerCount(BezierRoadState state, RoadType roadType)
+    {
+        int gap = roadType == RoadType.Simple ? 8 : 4;
+        int cornerCount = state.segmentCount / gap;
+        if (cornerCount < 4) cornerCount = 4;
+        return cornerCount;
+    }
+
+    public static int[] SegmentsPerEdge(BezierRoadState state, RoadType roadType)
+    {
+        int gap = roadType == RoadType.Simple ? 8 : 4;
+        int cornerCount = state.segmentCount / gap;
+        if (cornerCount < 4) cornerCount = 4;
+
+        int[] segPerEdge = new int[cornerCount];
+        state.primaryScatterPoints = new int[cornerCount];
+        state.primaryScatterPoints[0] = 0;
+        for (int i = 0; i < cornerCount; i++)
+        {
+            segPerEdge[i] = 8;
+            state.primaryScatterPoints[i] = i * 8;
+        }
+
+        return segPerEdge;
+    }
+
+    public static float[] Deviations(BezierRoadState state)
+    {
+        float[] deviations = new float[state.randomNumbers.Length];
+        for (int i = 0; i < state.randomNumbers.Length; i++)
+        {
+            deviations[i] = (100.0f + state.randomNumbers[i]) / 100.0f;
+        }
+        return deviations;
+    }
+
+
     /// <summary>
     /// Randomly chooses the indices of the bezier curve segments to be randomized with primary randomization.
     /// The amount of randomized curve segments depends on the road type, as well as on the segment count
@@ -51,8 +88,9 @@ public class RandomTools
 
         state.randomNumbers = new float[segmentCount];
         // no randomization on the last segment's end point
+        state.randomNumbers[0] = 0;
         state.randomNumbers[segmentCount - 1] = 0;
-        for (int i = 0; i < segmentCount - 1; i++)
+        for (int i = 1; i < segmentCount - 1; i++)
         {
             // determine if the segment has PRIMARY randomization
             bool primaryRandomization = state.primaryScatterPoints.Contains(i);
