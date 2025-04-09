@@ -1,8 +1,8 @@
 using UnityEngine;
 using System;
 using UnityEngine.Splines;
-using Unity.VisualScripting;
-using rcl_interfaces.msg;
+// using Unity.VisualScripting;
+// using rcl_interfaces.msg;
 
 public class BezierRoadGeometry
 {
@@ -67,9 +67,20 @@ public class BezierRoadGeometry
             float _z = _radius_i * Mathf.Sin(gamma);
             Vector3 corner = new(_x, 0, _z);
             // Debug.LogError($"The calculated corner is at: {corner}");
+
+            // // capture movemenet and apply it to the neighbouring intermediary knots
+            // Vector3 movement = corner - state.bezierKnots[points[i]][0];
+
             state.bezierKnots[points[i]][0] = corner;
             // knots[points[i + 1]][0] = corner;
             state.bezierKnots[points[i] - 1][3] = corner;
+
+            // NEW: ADJUST NEIGHBOURING INTERMEDIATE KNOTS
+            Vector3[] neighbours = CurveNeighbours(gamma, _radius_i);
+
+            // update movement to intermediary knots
+            state.bezierKnots[points[i]][1] = neighbours[1];
+            state.bezierKnots[points[i] - 1][2] = neighbours[0];    
         }
         // CALCULATE THE LAST cornerpoint from the last and second-last edges
         // distance between first corner point and third last cornerpoint
@@ -178,7 +189,8 @@ public class BezierRoadGeometry
 
         for (int i = 0; i < state.primaryScatterPoints.Length; i++)
         {
-            Interpolate(indexPairs[i][0], indexPairs[i][1], state.bezierKnots);
+            // Interpolate(indexPairs[i][0], indexPairs[i][1], state.bezierKnots);
+            InterpolateOld(indexPairs[i][0], indexPairs[i][1], state.bezierKnots);
         }
 
         // create secondary scattering
@@ -239,6 +251,47 @@ public class BezierRoadGeometry
 
     }
 
+    /// <summary>
+    /// Interpolates the position of the Bezier control knots of the given curves.
+    /// <br/> Scheme:
+    /// \[start: {2}{3}]\[start + 1: (0)(1)(2)(3)]\ ... \[end - 2: (0)(1)(2)(3)]\[end - 1: (0){1}]\ 
+    /// </summary>
+    /// <param name="start">index of start curve</param>
+    /// <param name="end">index of end curve still included (penultimate)</param>
+    /// <param name="bezierKnots">mian Bezier controll knots for all segments</param>
+    public static void InterpolateOld(int start, int end, Vector3[][] bezierKnots)
+    {
+        // calculate the number of full curve to be adjusted (subtract the incomplete curves at the end, see scheme)
+        int segments = end - start - 2;
+        // Debug.Log($"the knotCount is: {segments}");
+
+        // define the sampling factor
+        float sampling = 1f / (segments * 3 + 2 + 1);  // add 2 for {extra knots} at ends, add 1 for
+
+        // calculate vector between start and end
+        Vector3 distance = bezierKnots[end - 1][2] - bezierKnots[start][1];
+
+        // calculate the knots 2 and 3 from the start curve
+        bezierKnots[start][2] = bezierKnots[start][1] + 1 * sampling * distance;
+        bezierKnots[start][3] = bezierKnots[start][1] + 2 * sampling * distance;
+
+        // iterate over the bezier knots
+        for (int i = 0; i < segments; i++)
+        {
+            // calculate the new position of the knots
+            bezierKnots[(start + 1) + i][0] = bezierKnots[start][1] + (2 + 3 * i) * sampling * distance;
+            bezierKnots[(start + 1) + i][1] = bezierKnots[start][1] + (3 + 3 * i) * sampling * distance;
+            bezierKnots[(start + 1) + i][2] = bezierKnots[start][1] + (4 + 3 * i) * sampling * distance;
+            bezierKnots[(start + 1) + i][3] = bezierKnots[start][1] + (5 + 3 * i) * sampling * distance;
+        }
+
+        // calculate the knots 0 and 1 from the curve [end - 1]
+        bezierKnots[end - 1][0] = bezierKnots[start][1] + (2 + 3 * segments) * sampling * distance;
+        bezierKnots[end - 1][1] = bezierKnots[start][1] + (3 + 3 * segments) * sampling * distance;
+    }
+
+
+
     public static void ApplySecondaryScattering(Vector3[][] bezierKnots, float[] deviations)
     {
         // itearate over the bezierKnot groups (Bezier curve representations) and deviate the intermediary knots
@@ -282,5 +335,23 @@ public class BezierRoadGeometry
         // mirror the intermediary knot of the previous segment
         Vector3 distanceVector = knots[start][0] - knots[BezUtils.CircularIndex(start - 1, knots.Length)][2];
         knots[start][1] = knots[start][0] + distanceVector;
+    }
+
+    public static Vector3[] CurveNeighbours(float gamma, float radius)
+    {
+        // difference
+        float diff = 0.05f;
+
+        // neighbour n - 1
+        float x_0 = radius * Mathf.Cos(gamma - diff);
+        float z_0 = radius * Mathf.Sin(gamma - diff);
+        Vector3 p_0 = new(x_0, 0, z_0);
+
+        // neighbour n + 1
+        float x_2 = radius * Mathf.Cos(gamma + diff);
+        float z_2 = radius * Mathf.Sin(gamma + diff);
+        Vector3 p_2 = new(x_2, 0, z_2);
+
+        return new Vector3[] { p_0, p_2 };
     }
 }
