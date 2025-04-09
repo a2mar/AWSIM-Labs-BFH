@@ -32,7 +32,7 @@ public class BezierCurveGroup : MonoBehaviour
     private BezierCurve bezierCurve;
 
     [Header("Resolution (number of segments for every cubic Bezier curve)")]
-    public int resolution = 9; // Number of segments
+    public int resolution = 27; // Number of segments
     // for recognizing state changes
     private int _last_resolution;
 
