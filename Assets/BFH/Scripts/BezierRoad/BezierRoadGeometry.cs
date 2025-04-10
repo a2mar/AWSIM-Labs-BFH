@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using UnityEngine.Splines;
+using UnityEditor.ShaderGraph.Internal;
 // using Unity.VisualScripting;
 // using rcl_interfaces.msg;
 
@@ -111,10 +112,21 @@ public class BezierRoadGeometry
         Vector3 offset = rotatedDir.normalized * segPerEdge[cornerCount - 2] * segLen;
         // Debug.LogError($"The offset vector is: {offset}");
         Vector3 finalCorner = state.bezierKnots[points[cornerCount - 2]][0] + offset;
-
+        
         // save to the corresponding knots
         state.bezierKnots[points[cornerCount - 1] - 1][3] = state.bezierKnots[points[cornerCount - 1]][0] = finalCorner;
         // Debug.LogError($"the index of second last is: {points[cornerCount - 1]}");
+
+        // ADJUST NEIGHBOURING Intermediate knots
+        // calculate the angle between the final corner and the first curve segment's start knot
+        float finalRadius = (new Vector3(0f,0f,0f) - finalCorner).magnitude;
+        float cos_gamma_fin = (Mathf.Pow(finalRadius, 2f) + Mathf.Pow(radius, 2f) - Mathf.Pow(segPerEdge[cornerCount - 1] * segLen, 2f)) 
+        / (2 * finalRadius * radius);
+        float gamma_fin = 2 * Mathf.PI - Mathf.Acos(cos_gamma_fin);
+
+        Vector3[] neighFin = CurveNeighbours(gamma_fin, finalRadius);
+        state.bezierKnots[points[cornerCount - 1] - 1][2] = neighFin[0];
+        state.bezierKnots[points[cornerCount - 1]][1] = neighFin[1];
     }
 
     /// <summary>
