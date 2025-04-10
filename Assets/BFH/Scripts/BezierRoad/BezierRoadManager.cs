@@ -140,7 +140,6 @@ public class BezierRoadManager : MonoBehaviour
             GenerateRandomRoadPolygon();
             // Relax the bent curves
             int iterations = (int)Mathf.Ceil(scatteringRange / 20f);
-            Debug.Log($"iterations are {iterations}");
             for (int i = 0; i <= iterations; i++)
             {
                 BezierRoadGeometry.RelaxCurves(roadState);
@@ -170,6 +169,7 @@ public class BezierRoadManager : MonoBehaviour
         bool roadDone = false;
         bool vectorsCorrupt = false;
         bool cornersTooClose = false;
+        bool tangentsTooClose = false;
         do
         {
             GenerateRandomRoadPolygon(segmentPerEdge, cornerCount, segLength);
@@ -179,20 +179,26 @@ public class BezierRoadManager : MonoBehaviour
             vectorsCorrupt = BezWorkarounds.RoadVectorsCorrupt(roadState);
             if (vectorsCorrupt)
             {
-                Debug.LogError($"Corrupt vectors detected");
+                Debug.LogError($"Corrupt vectors detected. Rebuilding...");
                 continue;
             }
             cornersTooClose = BezWorkarounds.CornersTooClose(roadState, segLength);
             if (cornersTooClose)
             {
-                Debug.LogError($"Very Close Corners detected");
+                Debug.LogError($"Very Close Corners detected. Rebuilding...");
+                continue;
+            }
+            tangentsTooClose = BezWorkarounds.TangentsTooCLose(roadState);
+            if (tangentsTooClose)
+            {
+                Debug.LogError($"Very tight tangents detected. Rebuilding...");
                 continue;
             }
 
             // 7. Check the road and repeat if necessary
             roadDone = BezWorkarounds.RoadUnbroken(roadState, stretchFactor);
             Debug.Log($"road done: {roadDone}");
-            if (!roadDone) Debug.LogError("The road is not done");
+            if (!roadDone) Debug.LogError("Road has errors. Rebuilding");
         } while (!roadDone);
     }
 

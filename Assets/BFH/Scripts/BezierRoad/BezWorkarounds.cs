@@ -72,13 +72,35 @@ public class BezWorkarounds
                 float ratio = distance / segLen;
                 if (ratio < 3f)
                 {
-                    Debug.LogError($"VERY CLOSE CORNERS detected! REBUILD ROAD! points{i}={points[i]}");
-                    Debug.LogError($"points[{i} - 1 ={index1}]={points[index1]} and points[{i} + {j} = {index2}]={points[index2]},"
-                    + $" has distance={distance}, seglen={segLen}, and ratio={ratio}");
                     return true;
                 }
             }
         }
+        return false;
+    }
+    /// <summary>
+    /// determine the angle between neighbouring Bezier Curves
+    /// </summary>
+    /// <param name="state"></param>
+    /// <returns>True if the angle between curves is less than 120 degrees</returns>
+    public static bool TangentsTooCLose(BezierRoadState state)
+    {
+        Vector3[][] knots = state.bezierKnots;
+        int size = state.segmentCount;
+
+        for (int i = 0; i < size; i++)
+        {
+            int index_neg_1 = BezUtils.CircularIndex(i - 1, size);
+            Vector3 tangent1 = knots[index_neg_1][3] - knots[index_neg_1][2];
+            Vector3 tangent2 = knots[i][0] - knots[i][1];
+            float angle = Vector3.Angle(tangent1, tangent2);
+            if (angle < 120f)
+            {
+                Debug.LogError($"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!¨The angle is smaller at {i}!!!!!!!!!!!!");
+            }
+
+        }
+
         return false;
     }
 }
