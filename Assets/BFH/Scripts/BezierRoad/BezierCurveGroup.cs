@@ -279,5 +279,6 @@ public class BezierCurveGroup : MonoBehaviour
     public Vector3 GetStartPoint() => pm_0;
 
     public Vector3 GetStartDirection() => pm_1 - pm_0;
-  
+    
+    public BezierCurve GetBezierCurve() => bezierCurve;
 }

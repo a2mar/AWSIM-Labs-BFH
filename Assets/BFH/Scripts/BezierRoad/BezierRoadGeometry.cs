@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using UnityEngine.Splines;
 using UnityEditor.ShaderGraph.Internal;
+using System.Runtime.InteropServices.WindowsRuntime;
 // using Unity.VisualScripting;
 // using rcl_interfaces.msg;
 
@@ -51,9 +52,8 @@ public class BezierRoadGeometry
         // accumulated angle
         float gamma = 0f;
         for (int i = 1; i < points.Length - 1; i++)
-        // for (int i = 0; i < points.Length - 1; i++)
         {
-            Debug.Log($"i is: {i} points len is {points.Length}, and deviations len is {deviations.Length}, and points[i]={points[i]}");
+            // Debug.Log($"i is: {i} points len is {points.Length}, and deviations len is {deviations.Length}, and points[i]={points[i]}");
             float _radius_i = deviations[points[i]] * radius;
             float _radius_im1 = deviations[points[i - 1]] * radius;
             float cos_gamma = (Mathf.Pow(_radius_i, 2f) + Mathf.Pow(_radius_im1, 2f) - Mathf.Pow(segPerEdge[i] * segLen, 2f))
@@ -194,7 +194,7 @@ public class BezierRoadGeometry
     /// <summary>
     /// make Bezier Curves adjustment between primarily scattered Bezier knots
     /// </summary>
-    public static void AdjustKnotsWithScattering(BezierRoadState state, float[] deviations)
+    public static void AdjustKnots(BezierRoadState state)
     {
         // create array for index pairs (start and end)
         int[][] indexPairs = BezUtils.IndexPairsFromPrimaryS1(state);
@@ -365,5 +365,22 @@ public class BezierRoadGeometry
         Vector3 p_2 = new(x_2, 0, z_2);
 
         return new Vector3[] { p_0, p_2 };
+    }
+
+    public static bool RoadUnbroken(BezierRoadState state, float stretchFactor)
+    {
+        Vector3[][] knots = state.bezierKnots;
+        for (int i = 0; i < knots.Length; i++)
+        {
+            // Debug.LogError("HEREHRHE!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            BezierCurve currentCurve = new BezierCurve(knots[i][0], knots[i][1], knots[i][2], knots[i][3]);
+            float currentLength = CurveUtility.CalculateLength(currentCurve);
+            float targetLength = SegmentLength(state, stretchFactor);
+            float ratio = currentLength / targetLength;
+            // Debug.LogError($"{i}the currentLength is: {currentLength}, target length is: {targetLength}");
+            if (ratio > 1.5f) return false;
+        }
+        // Debug.Log("PASSED THE TEST");
+        return true;
     }
 }
