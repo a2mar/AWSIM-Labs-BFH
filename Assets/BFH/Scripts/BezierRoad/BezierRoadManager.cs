@@ -166,13 +166,13 @@ public class BezierRoadManager : MonoBehaviour
             // 6. Adjust the knots between the corners
             BezierRoadGeometry.AdjustKnots(roadState);
 
-            vectorsCorrupt = BezierRoadGeometry.RoadVectorsCorrupt(roadState);
+            vectorsCorrupt = BezWorkarounds.RoadVectorsCorrupt(roadState);
             if (vectorsCorrupt)
             {
                 Debug.LogError($"Corrupt vectors detected");
                 continue;
             }
-            cornersTooClose = BezierRoadGeometry.CornersTooClose(roadState, segLength);
+            cornersTooClose = BezWorkarounds.CornersTooClose(roadState, segLength);
             if (cornersTooClose)
             {
                 Debug.LogError($"Very Close Corners detected");
@@ -180,12 +180,12 @@ public class BezierRoadManager : MonoBehaviour
             }
 
             // 7. Check the road and repeat if necessary
-            roadDone = BezierRoadGeometry.RoadUnbroken(roadState, stretchFactor);
+            roadDone = BezWorkarounds.RoadUnbroken(roadState, stretchFactor);
             Debug.Log($"road done: {roadDone}");
             if (!roadDone) Debug.LogError("The road is not done");
         } while (!roadDone);
     }
-    
+
     private void GenerateRandomRoadPolygon(int[] segmentPerEdge, int cornerCount, float segLength)
     {
         // generate random numbers based on scattering
