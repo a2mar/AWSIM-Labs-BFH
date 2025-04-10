@@ -1,10 +1,6 @@
 using UnityEngine;
 using System;
 using UnityEngine.Splines;
-using UnityEditor.ShaderGraph.Internal;
-using System.Runtime.InteropServices.WindowsRuntime;
-// using Unity.VisualScripting;
-// using rcl_interfaces.msg;
 
 public class BezierRoadGeometry
 {
@@ -316,11 +312,6 @@ public class BezierRoadGeometry
             // update the first intermediary knot
             bezierKnots[i][1] = bezierKnots[i][1] + deviatedVec1;
 
-            // // 1st INTERMEDIARY KNOT: adjust to previous intermediate (for c1 continuity)
-            // Vector3 prev2ndKnot = bezierKnots[BezUtils.CircularIndex(i - 1, bezierKnots.Length)][3]
-            // - bezierKnots[BezUtils.CircularIndex(i - 1, bezierKnots.Length)][2];
-            // bezierKnots[i][1] = bezierKnots[i][0] + prev2ndKnot;
-
             // 2nd INTERMEDIARY KNOT
             // adjust the deviation
             float deviation2 = deviations[i] / 2;
@@ -332,9 +323,7 @@ public class BezierRoadGeometry
             // update the last intermediary knot
             bezierKnots[i][2] = bezierKnots[i][2] + deviatedVec2;
         }
-        // // make correction for first curve again
-        // Vector3 prev2ndKnot0 = bezierKnots[bezierKnots.Length - 1][3] - bezierKnots[bezierKnots.Length - 1][2];
-        // bezierKnots[0][1] = bezierKnots[0][0] + prev2ndKnot0;
+
     }
 
     public static void EnforceC1(int start, int end, Vector3[][] knots)
@@ -352,11 +341,7 @@ public class BezierRoadGeometry
         // neighbour n - 1
         float x_0 = radius * Mathf.Cos((2 * Mathf.PI + gamma - diff) % (2 * Mathf.PI));
         float z_0 = radius * Mathf.Sin((2 * Mathf.PI + gamma - diff) % (2 * Mathf.PI));
-        // if (gamma == 0)
-        // {
-        //     x_0 = radius * Mathf.Cos(2 * Mathf.PI);
-        //     z_0 = radius * Mathf.Sin(2 * Mathf.PI);
-        // }
+
         Vector3 p_0 = new(x_0, 0, z_0);
 
         // neighbour n + 1
@@ -367,4 +352,45 @@ public class BezierRoadGeometry
         return new Vector3[] { p_0, p_2 };
     }
 
+    public static void RelaxCurves(BezierRoadState state)
+    {
+        Vector3[][] knots = state.bezierKnots;
+        int size = state.segmentCount;
+        float minAngle = 120f;  // 120°
+        // iterate over curves, measure the angles of the tangents and correct them is they are too small
+        for (int i = 0; i < size; i++)
+        {
+            Vector3 startTangent = knots[i][1] - knots[i][0];
+            Vector3 endTangent = knots[i][2] - knots[i][3];
+            float angle = Vector3.Angle(startTangent, endTangent);
+            if (angle < minAngle)
+            {
+                Debug.LogError($"the angle in segment {i} is {angle}. Relaxing...");
+                // move the intermediary knots of the corresponding tangents half way to the middle line
+                // and then andjust the intermediary knots on the other side of the start / end knot
+
+                float magStart = startTangent.magnitude;
+                float magEnd = endTangent.magnitude;
+
+                Vector3 dir = (knots[i][3] - knots[i][0]).normalized;
+                Vector3 startProj = knots[i][0] + dir * magStart;
+                Vector3 endProj = knots[i][3] + -1f * magEnd * dir;
+
+                Vector3 startTanCor = Vector3.Lerp(knots[i][1], startProj, 0.5f);
+                Vector3 endTanCor = Vector3.Lerp(knots[i][2], endProj, 0.5f);
+
+                knots[i][1] = startTanCor;
+                knots[i][2] = endTanCor;
+
+                Vector3 diffStart = startTanCor - knots[i][0];
+                Vector3 diffEnd = knots[i][3] - endTanCor;
+
+                int prev = BezUtils.CircularIndex(i - 1, size);
+                int next = BezUtils.CircularIndex(i + 1, size);
+                knots[prev][2] = knots[i][0] - diffStart;
+                knots[next][1] = diffEnd + knots[i][3];
+            }
+
+        }
+    }
 }

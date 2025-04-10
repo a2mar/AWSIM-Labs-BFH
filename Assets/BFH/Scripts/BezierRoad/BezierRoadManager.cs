@@ -135,8 +135,12 @@ public class BezierRoadManager : MonoBehaviour
         // skip this if scatteringRange == 0, all random deviation will be 1
         if (scatteringRange != 0)
         {
-            // NEW ALGORITHM 
+            // ALGORITHM FOR RANDOM ROAD CREATION
             GenerateRandomRoadPolygon();
+            // Relax the bent curves
+            BezierRoadGeometry.RelaxCurves(roadState);
+            // update all Bezier segment components
+            for (int i = 0; i < roadState.segmentCount; i++) roadState.bezierCurves[i].ApplyMainBezierKnots(roadState.bezierKnots[i]);
         }
 
         // save state
