@@ -28,7 +28,7 @@ public class BezierRoadGeometry
     }
 
     public static float SegmentLength(BezierRoadState state, float strechFactor)
-    {   
+    {
         Vector3[] bKnots = CircularCubicBezierKnots(0, state.radius, state.segmentCount);
         BezierCurve bezierCurve = new BezierCurve(bKnots[0], bKnots[1], bKnots[2], bKnots[3]);
         float length = CurveUtility.CalculateLength(bezierCurve) * strechFactor;
@@ -119,8 +119,8 @@ public class BezierRoadGeometry
 
         // ADJUST NEIGHBOURING Intermediate knots
         // calculate the angle between the final corner and the first curve segment's start knot
-        float finalRadius = (new Vector3(0f,0f,0f) - finalCorner).magnitude;
-        float cos_gamma_fin = (Mathf.Pow(finalRadius, 2f) + Mathf.Pow(radius, 2f) - Mathf.Pow(segPerEdge[cornerCount - 1] * segLen, 2f)) 
+        float finalRadius = (new Vector3(0f, 0f, 0f) - finalCorner).magnitude;
+        float cos_gamma_fin = (Mathf.Pow(finalRadius, 2f) + Mathf.Pow(radius, 2f) - Mathf.Pow(segPerEdge[cornerCount - 1] * segLen, 2f))
         / (2 * finalRadius * radius);
         float gamma_fin = 2 * Mathf.PI - Mathf.Acos(cos_gamma_fin);
 
@@ -367,6 +367,12 @@ public class BezierRoadGeometry
         return new Vector3[] { p_0, p_2 };
     }
 
+    /// <summary>
+    /// WORKAROUND for occasions when the last corner point cannot be properly calculated due to the large distance.
+    /// </summary>
+    /// <param name="state"></param>
+    /// <param name="stretchFactor"></param>
+    /// <returns></returns>
     public static bool RoadUnbroken(BezierRoadState state, float stretchFactor)
     {
         Vector3[][] knots = state.bezierKnots;
@@ -382,5 +388,61 @@ public class BezierRoadGeometry
         }
         // Debug.Log("PASSED THE TEST");
         return true;
+    }
+
+    /// <summary>
+    /// WORKAROUND the fix NaN if the road cannot be calculated iteratively.
+    /// Checks if any vector components are NaN.
+    /// </summary>
+    /// <param name="state"></param>
+    /// <returns>true if any vector component is NaN</returns>
+    public static bool RoadVectorsCorrupt(BezierRoadState state)
+    {
+
+        for (int i = 0; i < state.segmentCount; i++)
+        {
+            if (float.IsNaN(state.bezierCurves[state.segmentCount - 1].GetLeftPoints()[1].x))
+            {
+                Debug.LogError("Found Corrupt vectors");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// WORKAROUND for prevention of beak shaped last corner.
+    /// They sould have at least the distance of two segments.
+    /// </summary>
+    /// <param name="state"></param>
+    /// <param name="segLen"></param>
+    /// <returns>True if two corners with distance 2 are too close</returns>
+    public static bool CornersTooClose(BezierRoadState state, float segLen)
+    {
+        Vector3[][] knots = state.bezierKnots;
+        int[] points = state.primaryScatterPoints;
+        int size = points.Length;
+
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                int index1 = BezUtils.CircularIndex(i - 1, size);
+                int index2 = BezUtils.CircularIndex(i + j, size);
+                float distance = Vector3.Distance(
+                        knots[points[index1]][0],
+                        knots[points[index2]][0]
+                    );
+                float ratio = distance / segLen;
+                if (ratio < 3f)
+                {
+                    Debug.LogError($"VERY CLOSE CORNERS detected! REBUILD ROAD! points{i}={points[i]}");
+                    Debug.LogError($"points[{i} - 1 ={index1}]={points[index1]} and points[{i} + {j} = {index2}]={points[index2]},"
+                    + $" has distance={distance}, seglen={segLen}, and ratio={ratio}");
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

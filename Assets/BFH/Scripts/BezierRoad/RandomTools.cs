@@ -14,12 +14,12 @@ public class RandomTools
         return cornerCount;
     }
 
-    public static int[] SegmentsPerEdge(BezierRoadState state, RoadType roadType)
+    public static int[] SegmentsPerEdge(BezierRoadState state, RoadType roadType, int cornerCount)
     {
         int gap = roadType == RoadType.Simple ? 8 : 4;
-        int cornerCount = state.segmentCount / gap;
-        if (cornerCount < 4) cornerCount = 4;
-        Debug.Log($"the cornerCount is :{cornerCount}");
+        // int cornerCount = state.segmentCount / gap;
+        // if (cornerCount < 4) cornerCount = 4;
+
         int[] segPerEdge = new int[cornerCount];
         state.primaryScatterPoints = new int[cornerCount];
         state.primaryScatterPoints[0] = 0;
