@@ -46,7 +46,14 @@ public class BezierRoadGeometry
         // copy frequently used state variables
         float radius = state.radius;
         int[] points = state.primaryScatterPoints;
-        // Vector3[][] knots = state.bezierKnots;
+        Vector3[][] knots = state.bezierKnots;
+
+        // SKIP THE FIRST CORNER, since its never deviated
+        // only adjust its neigbours
+        Vector3[] neighbours0 = CurveNeighbours(0f, radius);
+        knots[knots.Length - 1][2] = neighbours0[0];
+        knots[0][1] = neighbours0[1];
+
         // calculate the angle between the the deviated corners
         // USING Law of Cosinus: Cos(gamma) = (a^2 + b^2 + c^2) / (2 * a * b)
         // accumulated angle
@@ -59,43 +66,33 @@ public class BezierRoadGeometry
             float cos_gamma = (Mathf.Pow(_radius_i, 2f) + Mathf.Pow(_radius_im1, 2f) - Mathf.Pow(segPerEdge[i] * segLen, 2f))
             / (2 * _radius_i * _radius_im1);
 
-            // Debug.Log($"cos_gamma is: {cos_gamma}");
             gamma += Mathf.Acos(cos_gamma);
-            // Debug.Log($"gamma is {gamma}");
 
             // calculate the corner point
             float _x = _radius_i * Mathf.Cos(gamma);
             float _z = _radius_i * Mathf.Sin(gamma);
             Vector3 corner = new(_x, 0, _z);
-            // Debug.LogError($"The calculated corner is at: {corner}");
 
-            // // capture movemenet and apply it to the neighbouring intermediary knots
-            // Vector3 movement = corner - state.bezierKnots[points[i]][0];
+            knots[points[i]][0] = corner;
+            knots[points[i] - 1][3] = corner;
 
-            state.bezierKnots[points[i]][0] = corner;
-            // knots[points[i + 1]][0] = corner;
-            state.bezierKnots[points[i] - 1][3] = corner;
-
-            // NEW: ADJUST NEIGHBOURING INTERMEDIATE KNOTS
+            // ADJUST NEIGHBOURING INTERMEDIATE KNOTS
             Vector3[] neighbours = CurveNeighbours(gamma, _radius_i);
 
             // update movement to intermediary knots
-            state.bezierKnots[points[i]][1] = neighbours[1];
-            state.bezierKnots[points[i] - 1][2] = neighbours[0];
+            knots[points[i]][1] = neighbours[1];
+            knots[points[i] - 1][2] = neighbours[0];
         }
         // CALCULATE THE LAST cornerpoint from the last and second-last edges
         // distance between first corner point and third last cornerpoint
-
-        // DEBUG
-        Vector3 _dVec = state.bezierKnots[0][0] - state.bezierKnots[points[cornerCount - 2]][0];
+        Vector3 _dVec = knots[0][0] - knots[points[cornerCount - 2]][0];
         float _distance = _dVec.magnitude;
         Vector3 _dirVec = _dVec.normalized;
         // calculate beta with Law of Cosinus
         float cos_beta = (Mathf.Pow(segPerEdge[cornerCount - 2] * segLen, 2f) - Mathf.Pow(segPerEdge[cornerCount - 1] * segLen, 2f) +
         Mathf.Pow(_distance, 2f)) / (2 * segPerEdge[cornerCount - 2] * segLen * _distance);
-        // Mathf.Pow(_distance, 2f)) / (2 * segPerEdge[cornerCount - 2] * segLen * segPerEdge[cornerCount - 1] * segLen);
         float beta = Mathf.Acos(cos_beta) * (-1f);
-        // Debug.LogError($"the angle Beta is: {beta}");
+
         // PLACE THE LAST CORNER in the direction of the distance vector rotated by beta
         // Calculate rotation
         float sin = Mathf.Sin(beta);
@@ -110,12 +107,10 @@ public class BezierRoadGeometry
 
         // calculate rotated offset
         Vector3 offset = rotatedDir.normalized * segPerEdge[cornerCount - 2] * segLen;
-        // Debug.LogError($"The offset vector is: {offset}");
-        Vector3 finalCorner = state.bezierKnots[points[cornerCount - 2]][0] + offset;
+        Vector3 finalCorner = knots[points[cornerCount - 2]][0] + offset;
 
         // save to the corresponding knots
-        state.bezierKnots[points[cornerCount - 1] - 1][3] = state.bezierKnots[points[cornerCount - 1]][0] = finalCorner;
-        // Debug.LogError($"the index of second last is: {points[cornerCount - 1]}");
+        knots[points[cornerCount - 1] - 1][3] = knots[points[cornerCount - 1]][0] = finalCorner;
 
         // ADJUST NEIGHBOURING Intermediate knots
         // calculate the angle between the final corner and the first curve segment's start knot
@@ -125,8 +120,8 @@ public class BezierRoadGeometry
         float gamma_fin = 2 * Mathf.PI - Mathf.Acos(cos_gamma_fin);
 
         Vector3[] neighFin = CurveNeighbours(gamma_fin, finalRadius);
-        state.bezierKnots[points[cornerCount - 1] - 1][2] = neighFin[0];
-        state.bezierKnots[points[cornerCount - 1]][1] = neighFin[1];
+        knots[points[cornerCount - 1] - 1][2] = neighFin[0];
+        knots[points[cornerCount - 1]][1] = neighFin[1];
     }
 
     /// <summary>
@@ -355,8 +350,13 @@ public class BezierRoadGeometry
         float diff = 0.04f;
 
         // neighbour n - 1
-        float x_0 = radius * Mathf.Cos(gamma - diff);
-        float z_0 = radius * Mathf.Sin(gamma - diff);
+        float x_0 = radius * Mathf.Cos((2 * Mathf.PI + gamma - diff) % (2 * Mathf.PI));
+        float z_0 = radius * Mathf.Sin((2 * Mathf.PI + gamma - diff) % (2 * Mathf.PI));
+        // if (gamma == 0)
+        // {
+        //     x_0 = radius * Mathf.Cos(2 * Mathf.PI);
+        //     z_0 = radius * Mathf.Sin(2 * Mathf.PI);
+        // }
         Vector3 p_0 = new(x_0, 0, z_0);
 
         // neighbour n + 1
