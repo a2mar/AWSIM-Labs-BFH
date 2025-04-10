@@ -26,19 +26,19 @@ public class BezierRoadGeometry
         }
     }
 
-    public static float SegmentLength(BezierRoadState state)
-    {
+    public static float SegmentLength(BezierRoadState state, float strechFactor)
+    {   
         Vector3[] bKnots = CircularCubicBezierKnots(0, state.radius, state.segmentCount);
         BezierCurve bezierCurve = new BezierCurve(bKnots[0], bKnots[1], bKnots[2], bKnots[3]);
-        float length = CurveUtility.CalculateLength(bezierCurve);
+        float length = CurveUtility.CalculateLength(bezierCurve) * strechFactor;
         return length;
     }
 
-    public static float RoadLength(BezierRoadState state)
-    {
-        float totalLength = state.segmentCount * SegmentLength(state);
-        return totalLength;
-    }
+    // public static float RoadLength(BezierRoadState state)
+    // {
+    //     float totalLength = state.segmentCount * SegmentLength(state);
+    //     return totalLength;
+    // }
 
     public static void CalculateRoadCornerPositions(BezierRoadState state, float[] deviations, int[] segPerEdge, int cornerCount, float segLen)
     {
@@ -53,7 +53,7 @@ public class BezierRoadGeometry
         for (int i = 1; i < points.Length - 1; i++)
         // for (int i = 0; i < points.Length - 1; i++)
         {
-            // Debug.Log($"Deviations at point i = {deviations[i]}");
+            Debug.Log($"i is: {i} points len is {points.Length}, and deviations len is {deviations.Length}, and points[i]={points[i]}");
             float _radius_i = deviations[points[i]] * radius;
             float _radius_im1 = deviations[points[i - 1]] * radius;
             float cos_gamma = (Mathf.Pow(_radius_i, 2f) + Mathf.Pow(_radius_im1, 2f) - Mathf.Pow(segPerEdge[i] * segLen, 2f))
@@ -81,7 +81,7 @@ public class BezierRoadGeometry
 
             // update movement to intermediary knots
             state.bezierKnots[points[i]][1] = neighbours[1];
-            state.bezierKnots[points[i] - 1][2] = neighbours[0];    
+            state.bezierKnots[points[i] - 1][2] = neighbours[0];
         }
         // CALCULATE THE LAST cornerpoint from the last and second-last edges
         // distance between first corner point and third last cornerpoint
@@ -112,7 +112,7 @@ public class BezierRoadGeometry
         Vector3 offset = rotatedDir.normalized * segPerEdge[cornerCount - 2] * segLen;
         // Debug.LogError($"The offset vector is: {offset}");
         Vector3 finalCorner = state.bezierKnots[points[cornerCount - 2]][0] + offset;
-        
+
         // save to the corresponding knots
         state.bezierKnots[points[cornerCount - 1] - 1][3] = state.bezierKnots[points[cornerCount - 1]][0] = finalCorner;
         // Debug.LogError($"the index of second last is: {points[cornerCount - 1]}");
@@ -352,7 +352,7 @@ public class BezierRoadGeometry
     public static Vector3[] CurveNeighbours(float gamma, float radius)
     {
         // difference
-        float diff = 0.05f;
+        float diff = 0.04f;
 
         // neighbour n - 1
         float x_0 = radius * Mathf.Cos(gamma - diff);

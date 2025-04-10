@@ -81,4 +81,11 @@ public class BezUtils
     {
         return (size + index) % size;
     }
+
+    public static float StretchFactor(bool simple, float scattering)
+    {
+        if (simple) return 1f;
+        float factor = (100.0f + 0.4f * scattering) / 100.0f;
+        return factor; 
+    }
 }

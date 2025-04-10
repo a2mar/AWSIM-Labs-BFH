@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using UnityEngine;
 
 using static BezierRoadManager;
 
@@ -18,14 +19,14 @@ public class RandomTools
         int gap = roadType == RoadType.Simple ? 8 : 4;
         int cornerCount = state.segmentCount / gap;
         if (cornerCount < 4) cornerCount = 4;
-
+        Debug.Log($"the cornerCount is :{cornerCount}");
         int[] segPerEdge = new int[cornerCount];
         state.primaryScatterPoints = new int[cornerCount];
         state.primaryScatterPoints[0] = 0;
         for (int i = 0; i < cornerCount; i++)
         {
-            segPerEdge[i] = 8;
-            state.primaryScatterPoints[i] = i * 8;
+            segPerEdge[i] = gap;
+            state.primaryScatterPoints[i] = i * gap;
         }
 
         return segPerEdge;

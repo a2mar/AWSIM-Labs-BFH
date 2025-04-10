@@ -12,6 +12,8 @@
 // Author: Ammar Hammad
 
 using UnityEngine;
+using System.Net.Http;
+
 
 
 #if UNITY_EDITOR
@@ -26,7 +28,7 @@ public class BezierRoadManager : MonoBehaviour
 
     // variables added to be added to state
     private int segmentCount = 64;  // at least 16 for cricle creation
-    private float radius = 160.0f;
+    private float radius = 240.0f;
     private int triggersPerSegment = 4;
 
     // how much the control knots can be randomply scattered
@@ -45,7 +47,7 @@ public class BezierRoadManager : MonoBehaviour
     }
 
     [Header("Road Type")]
-    public RoadType roadType = RoadType.Simple;
+    public RoadType roadType = RoadType.Medium;
 
     // component state variables
     [SerializeField, HideInInspector]
@@ -143,10 +145,13 @@ public class BezierRoadManager : MonoBehaviour
 
             // NEW ALGORITHM Var B
             // 1. Define the number n of corners, in cluding start point of road (at x > 0, y == 0, z == 0)
-            // int cornerCount = RandomTools.CornerCount(roadState, roadType);
+            int cornerCount = RandomTools.CornerCount(roadState, roadType);
+            Debug.Log($"cornerCount: {cornerCount}");
             // 2. Define length of segments, lenght of their sum and the length of edges
             // DEBUG
-            float segLength = BezierRoadGeometry.SegmentLength(roadState);
+            float stretchFactor = BezUtils.StretchFactor(roadType == RoadType.Simple, scatteringRange);
+            Debug.Log($"strech factor is: {stretchFactor}");
+            float segLength = BezierRoadGeometry.SegmentLength(roadState, stretchFactor);
             // float roadLength = BezierRoadGeometry.RoadLength(roadState);
 
             // 3. Define length of every individual edge
@@ -159,7 +164,7 @@ public class BezierRoadManager : MonoBehaviour
             // 5. Calculate n-1 positions of the corners (by solving for the angles iteratively, given the edge-length and deviation)
             // DEBUG
             float[] deviations = RandomTools.Deviations(roadState);
-            BezierRoadGeometry.CalculateRoadCornerPositions(roadState, deviations, segmentPerEdge, segmentPerEdge.Length, segLength);
+            BezierRoadGeometry.CalculateRoadCornerPositions(roadState, deviations, segmentPerEdge, cornerCount, segLength);
             // 6. Calculate the n-th position (without deviation)
 
 
