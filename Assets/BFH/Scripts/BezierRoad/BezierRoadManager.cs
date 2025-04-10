@@ -34,6 +34,7 @@ public class BezierRoadManager : MonoBehaviour
     // how much the control knots can be randomply scattered
     [Header("Range of Random Scattering of Bezier Control Knots (0 means no random scattering)")]
     public float scatteringRange = 0f;
+    private float maxScattering = 40f;
 
     // secondary scattering
     [Header("Range of Secondary Random Scattering of Bezier Control Knots (0 means no secondary random scattering)")]
@@ -120,8 +121,8 @@ public class BezierRoadManager : MonoBehaviour
     /// </summary>
     void UpdateRoad()
     {
-        // validate the scattering range
-        if (scatteringRange > 30f) scatteringRange = 30f;
+        // validate the scattering range, bound it by maxScattering
+        if (scatteringRange > maxScattering) scatteringRange = maxScattering;
         // create BezierCurveGroup and BezierRoadMesh dynamically
         BezierComponentBuilder.AssignComponents(roadState);
         // deals with special case that scatteringRange == 0
@@ -138,7 +139,12 @@ public class BezierRoadManager : MonoBehaviour
             // ALGORITHM FOR RANDOM ROAD CREATION
             GenerateRandomRoadPolygon();
             // Relax the bent curves
-            BezierRoadGeometry.RelaxCurves(roadState);
+            int iterations = (int)Mathf.Ceil(scatteringRange / 20f);
+            Debug.Log($"iterations are {iterations}");
+            for (int i = 0; i <= iterations; i++)
+            {
+                BezierRoadGeometry.RelaxCurves(roadState);
+            }
             // update all Bezier segment components
             for (int i = 0; i < roadState.segmentCount; i++) roadState.bezierCurves[i].ApplyMainBezierKnots(roadState.bezierKnots[i]);
         }

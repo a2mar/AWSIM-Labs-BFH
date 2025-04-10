@@ -365,7 +365,7 @@ public class BezierRoadGeometry
             float angle = Vector3.Angle(startTangent, endTangent);
             if (angle < minAngle)
             {
-                Debug.LogError($"the angle in segment {i} is {angle}. Relaxing...");
+                // Debug.LogError($"the angle in segment {i} is {angle}. Relaxing...");
                 // move the intermediary knots of the corresponding tangents half way to the middle line
                 // and then andjust the intermediary knots on the other side of the start / end knot
 
