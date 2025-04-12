@@ -220,6 +220,15 @@ public class BezierRoadManager : MonoBehaviour
         }
     }
 
+    public void CallBezierTwinApproximation()
+    {
+        // foreach (BezierCurveGroup curve in roadState.bezierCurves)
+        // {
+        //     curve.ApproximateSecondaryCurves();
+        // }
+        roadState.bezierCurves[0].ApproximateSecondaryCurves();
+    }
+
     /// <summary>
     /// Get all the Bezier curve groupof the road.
     /// </summary>

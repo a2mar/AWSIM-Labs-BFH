@@ -22,5 +22,11 @@ public class BezierRoadEditor : Editor
             script.UpdateRoadMesh();
         }
 
+
+        if (GUILayout.Button("Approximate Bezier Curves Left and Right", GUILayout.Height(25)))
+        {
+            script.CallBezierTwinApproximation();
+        }
+
     }
 }
