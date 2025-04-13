@@ -14,6 +14,7 @@
 // 
 
 using Google.Protobuf.Reflection;
+using rcl_interfaces.msg;
 using UnityEngine;
 using UnityEngine.Rendering.Universal.Internal;
 using UnityEngine.Splines;
@@ -34,7 +35,7 @@ public class BezierCurveGroup : MonoBehaviour
     private BezierCurve bezierCurve;
 
     [Header("Resolution (number of segments for every cubic Bezier curve)")]
-    public int resolution = 9; // Number of segments
+    public int resolution = 27; // Number of segments
     // for recognizing state changes
     private int _last_resolution;
 
@@ -66,7 +67,7 @@ public class BezierCurveGroup : MonoBehaviour
     private float roadScaling = 4f;
 
     // epsilon for approximating the curves
-
+    private const float EPSILON = 0.75f;
 
     void OnValidate()
     {
@@ -209,10 +210,8 @@ public class BezierCurveGroup : MonoBehaviour
         // define normal vector
         Vector3 normal = new Vector3(0, 1, 0);
 
-        // TODO: define visibility and default values of these arbitrary factors (maybe easier to manipulate the curve than with knots)
-        // these factors define the amplitude of the tangents
-        // float factorS = 0.45f;
-        // float factorE = 0.285f;
+        // these factors define the amplitude of the tangents: in a cubix bezier control polygon, 
+        // a tangent referes to one of 3 edges, therefor, 1/3 seems a good starting point for a minimally curved Bezier curve
         float factorS = 1f / 3;
         float factorE = 1f / 3;
 
@@ -233,8 +232,6 @@ public class BezierCurveGroup : MonoBehaviour
         // calculate the intermediary points p_1 and p_2
         Vector3 p_1 = startPoint + startTangent;
         Vector3 p_2 = endPoint + endTangent;
-
-        // BezierCurve twinBezier = new BezierCurve(startPoint, p_1, p_2, endPoint);
 
         // return bezier knots;
         return (startPoint, p_1, p_2, endPoint);
@@ -276,65 +273,51 @@ public class BezierCurveGroup : MonoBehaviour
         }
         Gizmos.DrawSphere(sampledFittedBezierR[sampledFittedBezierR.Length - 1], 0.1f);
 
-        // DEBUG
-        // draw the sampled points calculated by total error mehtod:
-        float samplingRate = 1f / (resolution - 1);
-        Gizmos.color = Color.yellow;
-        for (int i = 0; i < resolution; i++)
-        {
-            Vector3 bezPoint = CurveUtility.EvaluatePosition(rightBezTwin, i * samplingRate);
-   
-            Gizmos.DrawSphere(bezPoint, 0.06f);
-
-        }
-        Vector3 bezPointN = CurveUtility.EvaluatePosition(rightBezTwin, resolution * samplingRate);
-        Gizmos.DrawSphere(bezPointN, 0.06f);
-
         // draw the sampled left twin Bezier curve
         Gizmos.color = Color.blue;
         for (int i = 0; i < sampledFittedBezierL.Length - 1; i++)
         {
             Gizmos.DrawLine(sampledFittedBezierL[i], sampledFittedBezierL[i + 1]);
             Gizmos.DrawSphere(sampledFittedBezierL[i], 0.1f);
+            Gizmos.DrawLine(sampledFittedBezierR[i], rightPoints[i]);
         }
+        Gizmos.DrawSphere(sampledFittedBezierL[sampledFittedBezierL.Length - 1], 0.1f);
     }
+
     /// <summary>
     /// Appriximates the Twin Bezier Curves left and right of the road to the equdistant lines left and right.
     /// </summary>
     public void ApproximateSecondaryCurves()
     {
         // measure distances
-        float epsilon = 0.25f;  // for debugging: epsilon extra small
-        float totalDiffRight = TotalDifference(rightBezTwin, rightPoints, sampledFittedBezierR);
-        // float totalDiffLeft = TotalDifference(leftBezTwin, leftPoints, sampledFittedBezierL);
+        float totalDiffRight = TotalDifference(rightBezTwin, rightPoints);
+        float totalDiffLeft = TotalDifference(leftBezTwin, leftPoints);
         Debug.Log($"the lenght of rightPoints: {rightPoints.Length}, the length of sampled Bez Curve right: {sampledFittedBezierR.Length}");
-        Debug.Log($"Epsilon is: {epsilon}, errors are: right {totalDiffRight}");
+        Debug.Log($"Epsilon is: {EPSILON}, errors are: right {totalDiffRight}, left {totalDiffLeft}");
         // approximate bez curves
-        // if (totalDiffRight > epsilon) ApproximateCurve(true, totalDiffRight, 0);
-        // if (totalDiffLeft > epsilon) ApproximateCurve(false, totalDiffLeft, 0);
+        float step = 0.004f;
+        if (totalDiffRight > EPSILON) ApproximateCurve(true, totalDiffRight, step, 10);
+        if (totalDiffLeft > EPSILON) ApproximateCurve(false, totalDiffLeft, step, 10);
 
         // Update the BezierCurves and the sample points
         UpdateTwinBezierSamplePoints();
     }
 
-    private float TotalDifference(BezierCurve bez, Vector3[] points, Vector3[] sampledPoints)
+    private float TotalDifference(BezierCurve bez, Vector3[] points)
     {
-        float samplingRate = 1f / resolution;
+        float samplingRate = 1f / (resolution - 1);  // same sampling rate as the equidistant lines
         float total = 0f;
         for (int i = 1; i < resolution; i++)
         {
-            // Vector3 bezPoint = CurveUtility.EvaluatePosition(bez, i * samplingRate);
-            float diff = Vector3.Distance(points[i], sampledPoints[i]);
-            Debug.Log($"Diff is: {diff}, points[{i}]: {points[i]}, and sampledPoints[{i}]: {sampledPoints[i]}");
+            Vector3 bezPoint = CurveUtility.EvaluatePosition(bez, i * samplingRate);
+            float diff = Vector3.Distance(points[i], bezPoint);
+            // Debug.Log($"Diff is: {diff}, points[{i}]: {points[i]}, and bezPoint: {bezPoint}");
             total += diff;
-            // float t = (float)i / (resolution - 1); // Ensure last point is at t = 1
-            // sampledFittedBezierR[i] = CurveUtility.EvaluatePosition(rightBezTwin, t);
-            // sampledFittedBezierL[i] = CurveUtility.EvaluatePosition(leftBezTwin, t);
         }
         return total;
     }
 
-    private void ApproximateCurve(bool right, float uncorrectedError, int round)
+    private void ApproximateCurve(bool right, float uncorrectedError, float step, int rounds)
     {
         // Make one end tangent shorter and calculate difference again
         // create a copy of the current knots
@@ -353,54 +336,72 @@ public class BezierCurveGroup : MonoBehaviour
         float length2 = (_p_2 - _p_3).magnitude;
 
         // correction step, for each iteration
-        float step = 0.05f;
+        // float step = 0.004f;  // overall best value when using with circle approximation
+        Debug.Log($"step is: {step}");
 
         // Decide which tangent to correct in which direction
         // 4 Possibilities: tangent 1 +, tangent 1 -, tangent 2 +, tangent 2 -
         Vector3 _t1_p = _p_0 + (1 + step) * length1 * dir1;
         Vector3 _t1_n = _p_0 + (1 - step) * length1 * dir1;
-        Vector3 _t2_p = _p_3 + (1 + step) * length1 * dir2;
-        Vector3 _t2_n = _p_3 + (1 - step) * length1 * dir2;
+        Vector3 _t2_p = _p_3 + (1 + step) * length2 * dir2;
+        Vector3 _t2_n = _p_3 + (1 - step) * length2 * dir2;
 
-        BezierCurve[] options = new BezierCurve[4];
+        BezierCurve[] options = new BezierCurve[5];
         options[0] = new BezierCurve(_p_0, _t1_p, _p_2, _p_3);
         options[1] = new BezierCurve(_p_0, _t1_n, _p_2, _p_3);
         options[2] = new BezierCurve(_p_0, _p_1, _t2_p, _p_3);
         options[3] = new BezierCurve(_p_0, _p_1, _t2_n, _p_3);
+        options[4] = new BezierCurve(_p_0, _t1_p, _t2_p, _p_3);
+
 
         int bestOption = -1;
-        float[] testedError = new float[4];
         float lowestError = uncorrectedError;
 
-        // for (int i = 1; i < 4; i++)
-        // {
-        //     float error = TotalDifference(options[i], points);
-        //     if (error < lowestError)
-        //     {
-        //         lowestError = error;
-        //         bestOption = i;
-        //     }
-        // }
+        for (int i = 1; i < 5; i++)
+        {
+            float error = TotalDifference(options[i], points);
+            Debug.Log($"error is: {error}");
+            if (error < lowestError)
+            {
+                lowestError = error;
+                bestOption = i;
+            }
+        }
+        Debug.Log($"best option is: {bestOption}, lowest error is: {lowestError}");
 
-        // only use the best option only it's error is smaller than
-        if (bestOption == -1) return;
+        // if non of the 4 options made improvements, make step smaller
+        if (bestOption == -1)
+        {
+            if (rounds > 0)
+            {
+                step *= 0.5f;
+                ApproximateCurve(right, uncorrectedError, step, rounds - 1);
+            }
+            // end approximation if rounds are used up
+            return;
+        }
+        //  return;
 
         // obtain the Bezier Control knots with the intermediary knot (tangent) interpolated
         Vector3[] IPBezKnots = new Vector3[4];
+        lowestError = uncorrectedError;
         Vector3[] originalBezNots = new[] { _p_0, _p_1, _p_2, _p_3 };
         switch (bestOption)
         {
             case 0:
-                IPBezKnots = InterpolateTangent10x(originalBezNots, 1, 1, step, dir1, length1, uncorrectedError, points);
+                (IPBezKnots, lowestError) = InterpolateTangent10x(originalBezNots, 1, 1, step, dir1, length1, uncorrectedError, points);
                 break;
             case 1:
-                IPBezKnots = InterpolateTangent10x(originalBezNots, 1, -1, step, dir1, length1, uncorrectedError, points);
+                (IPBezKnots, lowestError) = InterpolateTangent10x(originalBezNots, 1, -1, step, dir1, length1, uncorrectedError, points);
                 break;
             case 2:
-                IPBezKnots = InterpolateTangent10x(originalBezNots, 2, 1, step, dir2, length2, uncorrectedError, points);
+                (IPBezKnots, lowestError) = InterpolateTangent10x(originalBezNots, 2, 1, step, dir2, length2, uncorrectedError, points);
                 break;
             case 3:
-                IPBezKnots = InterpolateTangent10x(originalBezNots, 2, -1, step, dir2, length2, uncorrectedError, points);
+                (IPBezKnots, lowestError) = InterpolateTangent10x(originalBezNots, 2, -1, step, dir2, length2, uncorrectedError, points);
+                break;
+            case 4:
+                (IPBezKnots, lowestError) = InterPolateBothTangents10x(originalBezNots, 1, 1, step, dir1, dir2, length1, length2, uncorrectedError, points);
                 break;
             default:
                 break;
@@ -409,9 +410,19 @@ public class BezierCurveGroup : MonoBehaviour
         // apply the interpolated knots to the 
         if (right) (pr_0, pr_1, pr_2, pr_3) = (IPBezKnots[0], IPBezKnots[1], IPBezKnots[2], IPBezKnots[3]);
         else (pl_0, pl_1, pl_2, pl_3) = (IPBezKnots[0], IPBezKnots[1], IPBezKnots[2], IPBezKnots[3]);
+
+        // TERMINAL CONDITION I: Approximation Accuracy is already reached
+        if (uncorrectedError < EPSILON) return;
+
+        // TERMINAL CONDITION II: recursion only, if number of rounds left is > 0
+        if (rounds > 0)
+        {
+            rounds--;
+            ApproximateCurve(right, lowestError, step, rounds);
+        }
     }
 
-    private Vector3[] InterpolateTangent10x(Vector3[] knots, int tangent, int dirFactor, float step, Vector3 dir, float len, float uncorrectedError, Vector3[] points)
+    private (Vector3[], float) InterpolateTangent10x(Vector3[] knots, int tangent, int dirFactor, float step, Vector3 dir, float len, float uncorrectedError, Vector3[] points)
     {
         int iterations = 10;
         // index to start iterativ correction (either knot 0 or knot 3)
@@ -425,21 +436,62 @@ public class BezierCurveGroup : MonoBehaviour
         {
             knots[tangent] = knots[startIndex] + (1 + (dirFactor * i * step)) * len * dir;
             bez = new BezierCurve(knots[0], knots[1], knots[2], knots[3]);
-            // float error = TotalDifference(bez, points);
-            // if (error < lowestError)
-            // {
-            //     lowestError = error;
-            //     bestIFactor = i;
-            // }
-            // else if (error > lowestError) break;
+            float error = TotalDifference(bez, points);
+            Debug.Log($"The error in {i} is: {error}");
+            if (error < lowestError)
+            {
+                lowestError = error;
+                bestIFactor = i;
+            }
+            else if (error > lowestError)
+            {
+                Debug.Log($"Ended Interpolation after iteration {i}, and lowest error: {lowestError}");
+                break;
+            }
         }
 
         // recalculate the Bezier Curve
         knots[tangent] = knots[startIndex] + (1 + (dirFactor * bestIFactor * step)) * len * dir;
 
         // return the knots
-        return knots;
+        return (knots, lowestError);
 
+    }
+
+    private (Vector3[], float) InterPolateBothTangents10x(Vector3[] knots, int dirFactor1, int dirFactor2, float step, Vector3 dir1, Vector3 dir2, float len1, float len2, float uncorrectedError, Vector3[] points)
+    {
+        int iterations = 10;
+
+
+        float lowestError = uncorrectedError;
+        int bestIFactor = 0;
+        BezierCurve bez;
+        // iteratively interpolate as long as it lowers the error
+        for (int i = 0; i < iterations; i++)
+        {
+            knots[1] = knots[0] + (1 + (dirFactor1 * i * step)) * len1 * dir1;
+            knots[2] = knots[3] + (1 + (dirFactor2 * i * step)) * len2 * dir2;
+            bez = new BezierCurve(knots[0], knots[1], knots[2], knots[3]);
+            float error = TotalDifference(bez, points);
+            Debug.Log($"The error in {i} is: {error}");
+            if (error < lowestError)
+            {
+                lowestError = error;
+                bestIFactor = i;
+            }
+            else if (error > lowestError)
+            {
+                Debug.Log($"Ended Interpolation after iteration {i}, and lowest error: {lowestError}");
+                break;
+            }
+        }
+
+        // recalculate the Bezier Curve
+        knots[1] = knots[0] + (1 + (dirFactor1 * bestIFactor * step)) * len1 * dir1;
+        knots[2] = knots[3] + (1 + (dirFactor2 * bestIFactor * step)) * len2 * dir2;
+
+        // return the knots
+        return (knots, lowestError);
     }
 
     public Vector3[] GetLeftPoints() => leftPoints;  // for debugging, sampledFittedBezierL;
