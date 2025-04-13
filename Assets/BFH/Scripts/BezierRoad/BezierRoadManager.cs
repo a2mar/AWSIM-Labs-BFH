@@ -13,6 +13,8 @@
 
 using UnityEngine;
 using System.Net.Http;
+using System.Linq;
+
 
 
 
@@ -146,6 +148,9 @@ public class BezierRoadManager : MonoBehaviour
             }
             // update all Bezier segment components
             for (int i = 0; i < roadState.segmentCount; i++) roadState.bezierCurves[i].ApplyMainBezierKnots(roadState.bezierKnots[i]);
+
+            // show the primary scatter points
+            for (int i = 0; i < roadState.primaryScatterPoints.Length; i++) Debug.Log($"scatterPoints[{i}] = {roadState.primaryScatterPoints[i]}");
         }
 
         // save state
@@ -222,11 +227,30 @@ public class BezierRoadManager : MonoBehaviour
 
     public void CallBezierTwinApproximation()
     {
-        // foreach (BezierCurveGroup curve in roadState.bezierCurves)
+        if (roadState.primaryScatterPoints == null)
+        {
+            Debug.Log("No randomization has been applied. Skipping Approximation...");
+            return;
+        }
+
+        // for (int i = 0; i < segmentCount; i++)
         // {
-        //     curve.ApproximateSecondaryCurves();
+        //     // only approximate the curves that have randomized knots (knot 0 for n, knot 3 for n-1)
+        //     if (roadState.primaryScatterPoints.Contains(i))
+        //     {
+        //         int prev = BezUtils.CircularIndex(i - 1, segmentCount);
+        //         roadState.bezierCurves[prev].ApproximateSecondaryCurves();
+        //         roadState.bezierCurves[i].ApproximateSecondaryCurves();
+        //     }
         // }
-        roadState.bezierCurves[0].ApproximateSecondaryCurves();
+        // roadState.bezierCurves[segmentCount - 1].ApproximateSecondaryCurves();
+        float start = Time.realtimeSinceStartup;
+        foreach (BezierCurveGroup curve in roadState.bezierCurves)
+        {
+            curve.ApproximateSecondaryCurves();
+        }
+        float duration = Time.realtimeSinceStartup - start;
+        Debug.LogError($"Approximation took {duration * 1000f} ms");
     }
 
     /// <summary>

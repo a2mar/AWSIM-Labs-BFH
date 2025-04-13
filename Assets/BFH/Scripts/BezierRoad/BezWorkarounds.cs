@@ -97,6 +97,7 @@ public class BezWorkarounds
             if (angle < 120f)
             {
                 Debug.LogError($"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!¨The angle is smaller at {i}!!!!!!!!!!!!");
+                return true;
             }
 
         }

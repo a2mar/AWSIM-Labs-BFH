@@ -67,7 +67,7 @@ public class BezierCurveGroup : MonoBehaviour
     private float roadScaling = 4f;
 
     // epsilon for approximating the curves
-    private const float EPSILON = 0.75f;
+    private const float EPSILON = 0.15f;
 
     void OnValidate()
     {
@@ -295,7 +295,7 @@ public class BezierCurveGroup : MonoBehaviour
         Debug.Log($"the lenght of rightPoints: {rightPoints.Length}, the length of sampled Bez Curve right: {sampledFittedBezierR.Length}");
         Debug.Log($"Epsilon is: {EPSILON}, errors are: right {totalDiffRight}, left {totalDiffLeft}");
         // approximate bez curves
-        float step = 0.004f;
+        float step = 0.008f;
         if (totalDiffRight > EPSILON) ApproximateCurve(true, totalDiffRight, step, 10);
         if (totalDiffLeft > EPSILON) ApproximateCurve(false, totalDiffLeft, step, 10);
 
@@ -307,10 +307,11 @@ public class BezierCurveGroup : MonoBehaviour
     {
         float samplingRate = 1f / (resolution - 1);  // same sampling rate as the equidistant lines
         float total = 0f;
-        for (int i = 1; i < resolution; i++)
+        for (int i = 10; i < resolution - 10; i++)
         {
             Vector3 bezPoint = CurveUtility.EvaluatePosition(bez, i * samplingRate);
             float diff = Vector3.Distance(points[i], bezPoint);
+            // float diff = (points[i] - bezPoint).magnitude;
             // Debug.Log($"Diff is: {diff}, points[{i}]: {points[i]}, and bezPoint: {bezPoint}");
             total += diff;
         }
@@ -346,18 +347,21 @@ public class BezierCurveGroup : MonoBehaviour
         Vector3 _t2_p = _p_3 + (1 + step) * length2 * dir2;
         Vector3 _t2_n = _p_3 + (1 - step) * length2 * dir2;
 
-        BezierCurve[] options = new BezierCurve[5];
-        options[0] = new BezierCurve(_p_0, _t1_p, _p_2, _p_3);
-        options[1] = new BezierCurve(_p_0, _t1_n, _p_2, _p_3);
-        options[2] = new BezierCurve(_p_0, _p_1, _t2_p, _p_3);
-        options[3] = new BezierCurve(_p_0, _p_1, _t2_n, _p_3);
-        options[4] = new BezierCurve(_p_0, _t1_p, _t2_p, _p_3);
+        BezierCurve[] options = new BezierCurve[8];
+        options[0] = new BezierCurve(_p_0, _t1_p, _p_2, _p_3);  // 1st tangent +
+        options[1] = new BezierCurve(_p_0, _t1_n, _p_2, _p_3);  // 1st tangent -
+        options[2] = new BezierCurve(_p_0, _p_1, _t2_p, _p_3);  // 2nd tangent +
+        options[3] = new BezierCurve(_p_0, _p_1, _t2_n, _p_3);  // 2nd tangent -
+        options[4] = new BezierCurve(_p_0, _t1_p, _t2_p, _p_3); // both tangents +
+        options[5] = new BezierCurve(_p_0, _t1_n, _t2_n, _p_3); // both tangents -
+        options[6] = new BezierCurve(_p_0, _t1_p, _t2_n, _p_3); // tangent 1 +, tangent 2 -
+        options[7] = new BezierCurve(_p_0, _t1_n, _t2_p, _p_3); // tangent 1 -, tangent 2 +
 
 
         int bestOption = -1;
         float lowestError = uncorrectedError;
 
-        for (int i = 1; i < 5; i++)
+        for (int i = 1; i < 8; i++)
         {
             float error = TotalDifference(options[i], points);
             Debug.Log($"error is: {error}");
@@ -403,6 +407,15 @@ public class BezierCurveGroup : MonoBehaviour
             case 4:
                 (IPBezKnots, lowestError) = InterPolateBothTangents10x(originalBezNots, 1, 1, step, dir1, dir2, length1, length2, uncorrectedError, points);
                 break;
+            case 5:
+                (IPBezKnots, lowestError) = InterPolateBothTangents10x(originalBezNots, -1, -1, step, dir1, dir2, length1, length2, uncorrectedError, points);
+                break;
+            case 6:
+                (IPBezKnots, lowestError) = InterPolateBothTangents10x(originalBezNots, 1, -1, step, dir1, dir2, length1, length2, uncorrectedError, points);
+                break;
+            case 7:
+                (IPBezKnots, lowestError) = InterPolateBothTangents10x(originalBezNots, -1, 1, step, dir1, dir2, length1, length2, uncorrectedError, points);
+                break;
             default:
                 break;
         }
@@ -413,7 +426,9 @@ public class BezierCurveGroup : MonoBehaviour
 
         // TERMINAL CONDITION I: Approximation Accuracy is already reached
         if (uncorrectedError < EPSILON) return;
-
+        
+        // // reset step:
+        // step = 0.008f;
         // TERMINAL CONDITION II: recursion only, if number of rounds left is > 0
         if (rounds > 0)
         {
@@ -424,7 +439,7 @@ public class BezierCurveGroup : MonoBehaviour
 
     private (Vector3[], float) InterpolateTangent10x(Vector3[] knots, int tangent, int dirFactor, float step, Vector3 dir, float len, float uncorrectedError, Vector3[] points)
     {
-        int iterations = 10;
+        int iterations = 100;
         // index to start iterativ correction (either knot 0 or knot 3)
         int startIndex = tangent == 1 ? 0 : 3;
 
@@ -460,8 +475,7 @@ public class BezierCurveGroup : MonoBehaviour
 
     private (Vector3[], float) InterPolateBothTangents10x(Vector3[] knots, int dirFactor1, int dirFactor2, float step, Vector3 dir1, Vector3 dir2, float len1, float len2, float uncorrectedError, Vector3[] points)
     {
-        int iterations = 10;
-
+        int iterations = 100;
 
         float lowestError = uncorrectedError;
         int bestIFactor = 0;
