@@ -58,11 +58,17 @@ public class BezierCurveGroup : MonoBehaviour
 
     private BezierCurve leftBezTwin;
 
-    private Vector3[] curvePoints;
-    private Vector3[] rightPoints;
-    private Vector3[] leftPoints;
-    private Vector3[] sampledFittedBezierR;
-    private Vector3[] sampledFittedBezierL;
+    [SerializeField, HideInInspector]
+    private Vector3 pv_0, pv_1, pv_2, pv_3;
+    private BezierCurve middleRightLaneBez;  // for the middle of the right lane
+
+    private Vector3[] curvePoints;  // middle of the road (dashed line): sampled points from original Bezier curve
+    private Vector3[] rightPoints;  // right limit of road: points perpendicular to the tangents of points sampled from the original Bezier curve
+    private Vector3[] leftPoints;  // left limit of the road: points perpendicular to the tangents of points sampled from the original Bezier curve
+    private Vector3[] midRLanePoints;  // middle of the right lane: oints perpendicular to the tangents of points sampled from the original Bezier curve
+    private Vector3[] sampledFittedBezierR;  // sampled points from the Bezier curve fitted to the points for the right limit of the road
+    private Vector3[] sampledFittedBezierL;  // sampled points from the Bezier curve fitted to the points for the left limit of the road
+    private Vector3[] sampledFittedBezierMidR;  // sampled points from the Bezier curve fitted to the points for the middle of the right lane
 
     // scaling factor to adjust the width of the lane
     private float roadScaling = 4f;
@@ -73,8 +79,9 @@ public class BezierCurveGroup : MonoBehaviour
     void OnValidate()
     {
         // recalculate everything, if the middle bezier curve's parameter or the resolution changed
-        if (pm_0 != _last_pm_0 || pm_1 != _last_pm_1 || pm_2 != _last_pm_2 || pm_3 != _last_pm_3 || resolution != _last_resolution)
+        if (StateChanged())
         {
+            SaveState();
             CompleteSetup();
         }
         else
@@ -82,6 +89,17 @@ public class BezierCurveGroup : MonoBehaviour
             // ONLY Update the twin cubic Bezier curves and their sampled points
             UpdateTwinBezierSamplePoints();
         }
+    }
+
+    private void SaveState()
+    {
+        (_last_pm_0, _last_pm_1, _last_pm_2, _last_pm_3, _last_resolution) = (pm_0, pm_1, pm_2, pm_3, resolution);
+
+    }
+
+    private bool StateChanged()
+    {
+        return pm_0 != _last_pm_0 || pm_1 != _last_pm_1 || pm_2 != _last_pm_2 || pm_3 != _last_pm_3 || resolution != _last_resolution;
     }
 
     /// <summary>
@@ -102,6 +120,7 @@ public class BezierCurveGroup : MonoBehaviour
             Debug.LogError("Format mismatch. The Bezier knots cannot be applied");
         }
         // setup the Bezier Curve data
+        SaveState();
         CompleteSetup();
     }
 
@@ -111,12 +130,28 @@ public class BezierCurveGroup : MonoBehaviour
     /// </summary>
     void CompleteSetup()
     {
+        // INITIALIZE INSTANCE'S ARRAYS
+        InitializeContainers();
         // CALCULATE ALL CURVES AND LINES based on the original Bezier curve
         CalculateCurves();
         // UPDATE THE BEZIER CURVES FOR APPROXIMATION OF THE LEFT AND RIGHT EQUIDISTANT LINES
         UpdateBezierTwins();
         // UPDATE the arrays for the sampled twin bezier curves
         UpdateTwinBezierSamplePoints();
+    }
+
+    private void InitializeContainers()
+    {
+        bezierCurve = new BezierCurve(pm_0, pm_1, pm_2, pm_3);
+
+        // initialize the instance's arrays
+        curvePoints = new Vector3[resolution];
+        rightPoints = new Vector3[resolution];
+        leftPoints = new Vector3[resolution];
+        midRLanePoints = new Vector3[resolution];
+        sampledFittedBezierR = new Vector3[resolution];
+        sampledFittedBezierL = new Vector3[resolution];
+        sampledFittedBezierMidR = new Vector3[resolution];
     }
 
     /// <summary>
@@ -126,16 +161,7 @@ public class BezierCurveGroup : MonoBehaviour
     /// </summary>
     public void CalculateCurves()
     {
-        bezierCurve = new BezierCurve(pm_0, pm_1, pm_2, pm_3);
-        // save the new state to the _last variables
-        (_last_pm_0, _last_pm_1, _last_pm_2, _last_pm_3, _last_resolution) = (pm_0, pm_1, pm_2, pm_3, resolution);
-        curvePoints = new Vector3[resolution];
-        rightPoints = new Vector3[resolution];
-        leftPoints = new Vector3[resolution];
-        sampledFittedBezierR = new Vector3[resolution];
-        sampledFittedBezierL = new Vector3[resolution];
-
-        // sample the Bezier curve over t
+        // sample the main Bezier curve over t
         for (int i = 0; i < resolution; i++)
         {
             float t = (float)i / (resolution - 1); // ensures last point is at t = 1
@@ -144,8 +170,6 @@ public class BezierCurveGroup : MonoBehaviour
 
         // define the normal vertical vector for the complete 2d curve
         Vector3 normal = new Vector3(0, 1, 0);
-
-        // define scaling factor to adjust lane width
 
 
         // CALCULATE EUQIDISTANT LINES LEFT AND RIGHT OF THE BEZIER CURVE
@@ -163,10 +187,12 @@ public class BezierCurveGroup : MonoBehaviour
 
             // calculate cross product of normal and the normalized curve vector and add start posistion to it
             Vector3 xProductRight = roadScaling * Vector3.Cross(normal, curveVector.normalized) + curvePoints[i];  // Unity is left-hand
+            Vector3 xProductMidRightLane = 0.5f * roadScaling * Vector3.Cross(normal, curveVector.normalized) + curvePoints[i];  // Unity is left-hand
             Vector3 xProductLeft = roadScaling * Vector3.Cross(curveVector.normalized, normal) + curvePoints[i];
 
             rightPoints[i] = xProductRight;
             leftPoints[i] = xProductLeft;
+            midRLanePoints[i] = xProductMidRightLane;
         }
 
     }
@@ -181,6 +207,9 @@ public class BezierCurveGroup : MonoBehaviour
         // create control knots for the twin curves left and right of the original curve
         (pr_0, pr_1, pr_2, pr_3) = BezierTwinKnots(true);
         (pl_0, pl_1, pl_2, pl_3) = BezierTwinKnots(false);
+
+        // create control knots for the ideal path on the right lane
+        (pv_0, pv_1, pv_2, pv_3) = BezierTwinKnots(true, 0.5f);
     }
 
     /// <summary>
@@ -190,6 +219,7 @@ public class BezierCurveGroup : MonoBehaviour
     {
         rightBezTwin = new BezierCurve(pr_0, pr_1, pr_2, pr_3);
         leftBezTwin = new BezierCurve(pl_0, pl_1, pl_2, pl_3);
+        middleRightLaneBez = new BezierCurve(pv_0, pv_1, pv_2, pv_3);
 
         // sample the Bezier curve over t
         for (int i = 0; i < resolution; i++)
@@ -197,6 +227,7 @@ public class BezierCurveGroup : MonoBehaviour
             float t = (float)i / (resolution - 1); // Ensure last point is at t = 1
             sampledFittedBezierR[i] = CurveUtility.EvaluatePosition(rightBezTwin, t);
             sampledFittedBezierL[i] = CurveUtility.EvaluatePosition(leftBezTwin, t);
+            sampledFittedBezierMidR[i] = CurveUtility.EvaluatePosition(middleRightLaneBez, t);
         }
     }
 
@@ -206,10 +237,13 @@ public class BezierCurveGroup : MonoBehaviour
     /// </summary>
     /// <param name="right">if true, the right curve's control knots should be calculated, else the left's</param>
     /// <returns>the 4 control points for a cubic Bezier curve</returns>
-    (Vector3, Vector3, Vector3, Vector3) BezierTwinKnots(bool right)
+    (Vector3, Vector3, Vector3, Vector3) BezierTwinKnots(bool right, float width = 1f)
     {
         // define normal vector
         Vector3 normal = new Vector3(0, 1, 0);
+
+        // adjust roadScaling according to width factor
+        float roadWidth = roadScaling * width;
 
         // these factors define the amplitude of the tangents: in a cubix bezier control polygon, 
         // a tangent referes to one of 3 edges, therefor, 1/3 seems a good starting point for a minimally curved Bezier curve
@@ -227,8 +261,8 @@ public class BezierCurveGroup : MonoBehaviour
         // calculate twin's start and end point the cross product between normal and tangent vector 
         // and add original start and end point to it
         // USING bxa = -axb = (-1*a)xb, to switch between axb and bxa simple by factor
-        Vector3 startPoint = roadScaling * Vector3.Cross(orientation * normal, startTangent.normalized) + pm_0;
-        Vector3 endPoint = roadScaling * Vector3.Cross(orientation * endTangent.normalized, normal) + pm_3;
+        Vector3 startPoint = roadWidth * Vector3.Cross(orientation * normal, startTangent.normalized) + pm_0;
+        Vector3 endPoint = roadWidth * Vector3.Cross(orientation * endTangent.normalized, normal) + pm_3;
 
         // calculate the intermediary points p_1 and p_2
         Vector3 p_1 = startPoint + startTangent;
@@ -251,12 +285,16 @@ public class BezierCurveGroup : MonoBehaviour
         // draw the equdistant curves 
         DrawCurve(rightPoints, Color.cyan, radiusCurveSpheres, null);
         DrawCurve(leftPoints, Color.cyan, radiusCurveSpheres, null);
+        DrawCurve(midRLanePoints, Color.magenta, radiusCurveSpheres, null);
 
         // draw the sampled right twin Bezier curve 
         DrawCurve(sampledFittedBezierL, Color.blue, radiusCurveSpheres, leftPoints);
 
         // draw the sampled left twin Bezier curve
         DrawCurve(sampledFittedBezierR, Color.red, radiusCurveSpheres, rightPoints);
+
+        // draw the sampled left twin Bezier curve
+        DrawCurve(sampledFittedBezierMidR, Color.yellow, radiusCurveSpheres, midRLanePoints);
 
         // draw the Bezier knots
         DrawBezierKnots(new[] { pm_0, pm_1, pm_2, pm_3 }, Color.green, radiusBezierKnots);
