@@ -242,51 +242,37 @@ public class BezierCurveGroup : MonoBehaviour
     {
         if (curvePoints == null || curvePoints.Length < 2) return;
 
-        Gizmos.color = Color.green;
-        for (int i = 0; i < curvePoints.Length - 1; i++)
-        {
-            Gizmos.DrawLine(curvePoints[i], curvePoints[i + 1]);
-        }
+        float radiusCurveSpheres = 0.1f;
+        float radiusBezierKnots = 0.5f;
 
-        Gizmos.color = Color.cyan;
-        for (int i = 0; i < rightPoints.Length - 1; i++)
-        {
-            Gizmos.DrawLine(rightPoints[i], rightPoints[i + 1]);
-            Gizmos.DrawSphere(rightPoints[i], 0.1f);
-        }
-        Gizmos.DrawSphere(rightPoints[rightPoints.Length - 1], 0.1f);
+        // draw the main Bezier curve
+        DrawCurve(curvePoints, Color.green, radiusCurveSpheres, null);
 
-        Gizmos.color = Color.cyan;
-        for (int i = 0; i < leftPoints.Length - 1; i++)
-        {
-            Gizmos.DrawLine(leftPoints[i], leftPoints[i + 1]);
-            Gizmos.DrawSphere(leftPoints[i], 0.1f);
-        }
-        Gizmos.DrawSphere(leftPoints[leftPoints.Length - 1], 0.1f);
+        // draw the equdistant curves 
+        DrawCurve(rightPoints, Color.cyan, radiusCurveSpheres, null);
+        DrawCurve(leftPoints, Color.cyan, radiusCurveSpheres, null);
 
         // draw the sampled right twin Bezier curve 
-        Gizmos.color = Color.red;
-        for (int i = 0; i < sampledFittedBezierR.Length - 1; i++)
-        {
-            Gizmos.DrawLine(sampledFittedBezierR[i], sampledFittedBezierR[i + 1]);
-            Gizmos.DrawSphere(sampledFittedBezierR[i], 0.1f);
-            Gizmos.DrawLine(sampledFittedBezierR[i], rightPoints[i]);
-        }
-        Gizmos.DrawSphere(sampledFittedBezierR[sampledFittedBezierR.Length - 1], 0.1f);
+        DrawCurve(sampledFittedBezierL, Color.blue, radiusCurveSpheres, leftPoints);
 
         // draw the sampled left twin Bezier curve
-        Gizmos.color = Color.blue;
-        for (int i = 0; i < sampledFittedBezierL.Length - 1; i++)
+        DrawCurve(sampledFittedBezierR, Color.red, radiusCurveSpheres, rightPoints);
+    }
+
+    private void DrawCurve(Vector3[] points, Color color, float radius, Vector3[] refPoints = null)
+    {
+        Gizmos.color = color;
+        for (int i = 0; i < points.Length - 1; i++)
         {
-            Gizmos.DrawLine(sampledFittedBezierL[i], sampledFittedBezierL[i + 1]);
-            Gizmos.DrawSphere(sampledFittedBezierL[i], 0.1f);
-            Gizmos.DrawLine(sampledFittedBezierR[i], rightPoints[i]);
+            Gizmos.DrawLine(points[i], points[i + 1]);
+            Gizmos.DrawSphere(points[i], radius);
+            if (refPoints != null) Gizmos.DrawLine(points[i], refPoints[i]);
         }
-        Gizmos.DrawSphere(sampledFittedBezierL[sampledFittedBezierL.Length - 1], 0.1f);
+        Gizmos.DrawSphere(points[points.Length - 1], radius);
     }
 
     /// <summary>
-    /// Appriximates the Twin Bezier Curves left and right of the road to the equdistant lines left and right.
+    /// Approximates the Twin Bezier Curves left and right of the road to the equdistant lines left and right.
     /// </summary>
     public void ApproximateSecondaryCurves()
     {
@@ -305,30 +291,12 @@ public class BezierCurveGroup : MonoBehaviour
         UpdateTwinBezierSamplePoints();
     }
 
-    private float TotalDifference_bk(BezierCurve bez, Vector3[] points)
-    {
-        float samplingRate = 1f / (resolution - 1);  // same sampling rate as the equidistant lines
-        float total = 0f;
-        int valCount = 0;
-        for (int i = 6; i < resolution - 6; i += 2)
-        {
-            Vector3 bezPoint = CurveUtility.EvaluatePosition(bez, i * samplingRate);
-            float diff = Vector3.Distance(points[i], bezPoint);
-            // float diff = (points[i] - bezPoint).magnitude;
-            // Debug.Log($"Diff is: {diff}, points[{i}]: {points[i]}, and bezPoint: {bezPoint}");
-            total += diff;
-            valCount++;
-        }
-        return total / valCount;
-        // return total;
-    }
-
     private float TotalDifference(BezierCurve bez, Vector3[] points)
     {
         float samplingRate = 1f / (resolution - 1);  // same sampling rate as the equidistant lines
         float total = 0f;
         int valCount = 0;
-        for (int i = 2; i < resolution - 2; i+=2)
+        for (int i = 2; i < resolution - 2; i += 2)
         {
             Vector3 bezPoint_in1 = CurveUtility.EvaluatePosition(bez, (i - 1) * samplingRate);
             Vector3 bezPoint_i = CurveUtility.EvaluatePosition(bez, i * samplingRate);

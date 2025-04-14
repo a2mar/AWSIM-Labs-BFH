@@ -3,8 +3,7 @@
 // respective generated road mesh.
 //
 // TODO:
-//  - implement secondary scattering algorithm
-//  - adjust primary scattering
+//  - wrap debug statements into compiler macros
 //  
 // ISSUES:
 //  - different lengths of curve segments after interpolation
@@ -233,24 +232,14 @@ public class BezierRoadManager : MonoBehaviour
             return;
         }
 
-        // for (int i = 0; i < segmentCount; i++)
-        // {
-        //     // only approximate the curves that have randomized knots (knot 0 for n, knot 3 for n-1)
-        //     if (roadState.primaryScatterPoints.Contains(i))
-        //     {
-        //         int prev = BezUtils.CircularIndex(i - 1, segmentCount);
-        //         roadState.bezierCurves[prev].ApproximateSecondaryCurves();
-        //         roadState.bezierCurves[i].ApproximateSecondaryCurves();
-        //     }
-        // }
         // roadState.bezierCurves[segmentCount - 1].ApproximateSecondaryCurves();
-        float start = Time.realtimeSinceStartup;
+        // float start = Time.realtimeSinceStartup;
         foreach (BezierCurveGroup curve in roadState.bezierCurves)
         {
             curve.ApproximateSecondaryCurves();
         }
-        float duration = Time.realtimeSinceStartup - start;
-        Debug.LogError($"Approximation took {duration * 1000f} ms");
+        // float duration = Time.realtimeSinceStartup - start;
+        // Debug.LogError($"Approximation took {duration * 1000f} ms");
     }
 
     /// <summary>
