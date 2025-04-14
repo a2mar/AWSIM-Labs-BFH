@@ -149,7 +149,7 @@ public class BezierRoadManager : MonoBehaviour
             for (int i = 0; i < roadState.segmentCount; i++) roadState.bezierCurves[i].ApplyMainBezierKnots(roadState.bezierKnots[i]);
 
             // show the primary scatter points
-            for (int i = 0; i < roadState.primaryScatterPoints.Length; i++) Debug.Log($"scatterPoints[{i}] = {roadState.primaryScatterPoints[i]}");
+            // for (int i = 0; i < roadState.primaryScatterPoints.Length; i++) Debug.Log($"scatterPoints[{i}] = {roadState.primaryScatterPoints[i]}");
         }
 
         // save state
@@ -183,26 +183,26 @@ public class BezierRoadManager : MonoBehaviour
             vectorsCorrupt = BezWorkarounds.RoadVectorsCorrupt(roadState);
             if (vectorsCorrupt)
             {
-                Debug.LogError($"Corrupt vectors detected. Rebuilding...");
+                Debug.Log($"Corrupt vectors detected. Rebuilding...");
                 continue;
             }
             cornersTooClose = BezWorkarounds.CornersTooClose(roadState, segLength);
             if (cornersTooClose)
             {
-                Debug.LogError($"Very Close Corners detected. Rebuilding...");
+                Debug.Log($"Very Close Corners detected. Rebuilding...");
                 continue;
             }
             tangentsTooClose = BezWorkarounds.TangentsTooCLose(roadState);
             if (tangentsTooClose)
             {
-                Debug.LogError($"Very tight tangents detected. Rebuilding...");
+                Debug.Log($"Very tight tangents detected. Rebuilding...");
                 continue;
             }
 
             // 7. Check the road and repeat if necessary
             roadDone = BezWorkarounds.RoadUnbroken(roadState, stretchFactor);
-            Debug.Log($"road done: {roadDone}");
-            if (!roadDone) Debug.LogError("Road has errors. Rebuilding");
+            // Debug.Log($"road done: {roadDone}");
+            if (!roadDone) Debug.Log("Road has errors. Rebuilding...");
         } while (!roadDone);
     }
 

@@ -39,7 +39,7 @@ public class BezWorkarounds
         {
             if (float.IsNaN(state.bezierCurves[state.segmentCount - 1].GetLeftPoints()[1].x))
             {
-                Debug.LogError("Found Corrupt vectors");
+                // Debug.LogError("Found Corrupt vectors");
                 return true;
             }
         }
@@ -96,7 +96,7 @@ public class BezWorkarounds
             Vector3 tangent3 = knots[i][3] - knots[i][2];
             float angleExtra = Vector3.Angle(tangent1, tangent2); // angle between neighbouring curves
             float angleIntra = Vector3.Angle(tangent2, tangent3); // angle between neighbouring curves
-            Debug.Log($"the angle in ");
+            // Debug.Log($"the angle in ");
             if (angleExtra < 120f)
             {
                 Debug.LogError($"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!¨The EXTRA angle is smaller at {i}!!!!!!!!!!!!");
