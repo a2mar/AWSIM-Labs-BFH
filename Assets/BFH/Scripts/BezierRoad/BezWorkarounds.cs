@@ -93,12 +93,22 @@ public class BezWorkarounds
             int index_neg_1 = BezUtils.CircularIndex(i - 1, size);
             Vector3 tangent1 = knots[index_neg_1][3] - knots[index_neg_1][2];
             Vector3 tangent2 = knots[i][0] - knots[i][1];
-            float angle = Vector3.Angle(tangent1, tangent2);
-            if (angle < 120f)
+            Vector3 tangent3 = knots[i][3] - knots[i][2];
+            float angleExtra = Vector3.Angle(tangent1, tangent2); // angle between neighbouring curves
+            float angleIntra = Vector3.Angle(tangent2, tangent3); // angle between neighbouring curves
+            Debug.Log($"the angle in ");
+            if (angleExtra < 120f)
             {
-                Debug.LogError($"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!¨The angle is smaller at {i}!!!!!!!!!!!!");
+                Debug.LogError($"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!¨The EXTRA angle is smaller at {i}!!!!!!!!!!!!");
                 return true;
             }
+            if (angleIntra < 120f)
+            {
+                Debug.LogError($"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!¨The INTRA angle is smaller at {i}!!!!!!!!!!!!");
+                return true;
+            }
+
+
 
         }
 
