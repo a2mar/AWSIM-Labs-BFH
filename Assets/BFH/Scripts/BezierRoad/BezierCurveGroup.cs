@@ -257,6 +257,11 @@ public class BezierCurveGroup : MonoBehaviour
 
         // draw the sampled left twin Bezier curve
         DrawCurve(sampledFittedBezierR, Color.red, radiusCurveSpheres, rightPoints);
+
+        // draw the Bezier knots
+        DrawBezierKnots(new[]{pm_0, pm_1, pm_2, pm_3}, Color.green, radiusBezierKnots);
+        DrawBezierKnots(new[]{pl_0, pl_1, pl_2, pl_3}, Color.blue, radiusBezierKnots);
+        DrawBezierKnots(new[]{pr_0, pr_1, pr_2, pr_3}, Color.red, radiusBezierKnots);
     }
 
     private void DrawCurve(Vector3[] points, Color color, float radius, Vector3[] refPoints = null)
@@ -269,6 +274,17 @@ public class BezierCurveGroup : MonoBehaviour
             if (refPoints != null) Gizmos.DrawLine(points[i], refPoints[i]);
         }
         Gizmos.DrawSphere(points[points.Length - 1], radius);
+    }
+
+    private void DrawBezierKnots(Vector3[] knots, Color color, float radius)
+    {
+        Gizmos.color = color;
+        for (int i = 0; i < 3; i++) 
+        {
+            Gizmos.DrawSphere(knots[i], radius);
+            Gizmos.DrawLine(knots[i], knots[i + 1]);
+        }
+        Gizmos.DrawSphere(knots[3], radius);
     }
 
     /// <summary>

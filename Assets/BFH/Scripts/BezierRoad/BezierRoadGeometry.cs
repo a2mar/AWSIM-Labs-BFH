@@ -269,7 +269,7 @@ public class BezierRoadGeometry
         // Debug.Log($"the knotCount is: {segments}");
 
         // define the sampling factor
-        float sampling = 1f / (segments * 3 + 2 + 1);  // add 2 for {extra knots} at ends, add 1 for
+        float sampling = 1f / (segments * 3 + 4);  // add 4 for {extra knots} at ends, 
 
         // calculate vector between start and end
         Vector3 distance = bezierKnots[end - 1][2] - bezierKnots[start][1];
