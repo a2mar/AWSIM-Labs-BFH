@@ -102,7 +102,7 @@ public class BezWorkarounds
                 Debug.LogError($"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!¨The EXTRA angle is smaller at {i}!!!!!!!!!!!!");
                 return true;
             }
-            if (angleIntra < 120f)
+            if (angleIntra < 100f)
             {
                 Debug.LogError($"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!¨The INTRA angle is smaller at {i}!!!!!!!!!!!!");
                 return true;
