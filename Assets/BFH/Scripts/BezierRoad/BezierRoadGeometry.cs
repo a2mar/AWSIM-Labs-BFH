@@ -336,7 +336,7 @@ public class BezierRoadGeometry
     public static Vector3[] CurveNeighbours(float gamma, float radius)
     {
         // difference
-        float diff = 0.06f;
+        float diff = 0.04f;
 
         // neighbour n - 1
         float x_0 = radius * Mathf.Cos((2 * Mathf.PI + gamma - diff) % (2 * Mathf.PI));

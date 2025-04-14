@@ -242,8 +242,8 @@ public class BezierCurveGroup : MonoBehaviour
     {
         if (curvePoints == null || curvePoints.Length < 2) return;
 
-        float radiusCurveSpheres = 0.1f;
-        float radiusBezierKnots = 0.5f;
+        float radiusCurveSpheres = 0.05f;
+        float radiusBezierKnots = 0.2f;
 
         // draw the main Bezier curve
         DrawCurve(curvePoints, Color.green, radiusCurveSpheres, null);
@@ -259,9 +259,9 @@ public class BezierCurveGroup : MonoBehaviour
         DrawCurve(sampledFittedBezierR, Color.red, radiusCurveSpheres, rightPoints);
 
         // draw the Bezier knots
-        DrawBezierKnots(new[]{pm_0, pm_1, pm_2, pm_3}, Color.green, radiusBezierKnots);
-        DrawBezierKnots(new[]{pl_0, pl_1, pl_2, pl_3}, Color.blue, radiusBezierKnots);
-        DrawBezierKnots(new[]{pr_0, pr_1, pr_2, pr_3}, Color.red, radiusBezierKnots);
+        DrawBezierKnots(new[] { pm_0, pm_1, pm_2, pm_3 }, Color.green, radiusBezierKnots);
+        DrawBezierKnots(new[] { pl_0, pl_1, pl_2, pl_3 }, Color.blue, radiusBezierKnots);
+        DrawBezierKnots(new[] { pr_0, pr_1, pr_2, pr_3 }, Color.red, radiusBezierKnots);
     }
 
     private void DrawCurve(Vector3[] points, Color color, float radius, Vector3[] refPoints = null)
@@ -279,12 +279,13 @@ public class BezierCurveGroup : MonoBehaviour
     private void DrawBezierKnots(Vector3[] knots, Color color, float radius)
     {
         Gizmos.color = color;
-        for (int i = 0; i < 3; i++) 
+        for (int i = 0; i < 4; i++)
         {
             Gizmos.DrawSphere(knots[i], radius);
-            Gizmos.DrawLine(knots[i], knots[i + 1]);
+
         }
-        Gizmos.DrawSphere(knots[3], radius);
+        Gizmos.DrawLine(knots[0], knots[1]);
+        Gizmos.DrawLine(knots[2], knots[3]);
     }
 
     /// <summary>
