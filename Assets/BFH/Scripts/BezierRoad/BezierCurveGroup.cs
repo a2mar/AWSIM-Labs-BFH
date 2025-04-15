@@ -63,8 +63,11 @@ public class BezierCurveGroup : MonoBehaviour
     private BezierCurve middleRightLaneBez;  // for the middle of the right lane
 
     private Vector3[] curvePoints;  // middle of the road (dashed line): sampled points from original Bezier curve
-    private Vector3[] rightPoints;  // right limit of road: points perpendicular to the tangents of points sampled from the original Bezier curve
-    private Vector3[] leftPoints;  // left limit of the road: points perpendicular to the tangents of points sampled from the original Bezier curve
+    private Vector3[] rightPoints;  // ref. for right Bezier Twin: points perpendicular to the tangents of points sampled from the original Bezier curve
+    private Vector3[] leftPoints;  // ref. for left Bezier Twin: points perpendicular to the tangents of points sampled from the original Bezier curve
+    private Vector3[] leftEdge;  // left limit of the road: taking into account the Bezier curves need to be in the middle of the lane marking
+    private Vector3[] rightEdge;  // right limit of the road: taking into account the Bezier curves need to be in the middle of the lane marking
+    
     private Vector3[] midRLanePoints;  // middle of the right lane: oints perpendicular to the tangents of points sampled from the original Bezier curve
     private Vector3[] sampledFittedBezierR;  // sampled points from the Bezier curve fitted to the points for the right limit of the road
     private Vector3[] sampledFittedBezierL;  // sampled points from the Bezier curve fitted to the points for the left limit of the road
@@ -148,6 +151,8 @@ public class BezierCurveGroup : MonoBehaviour
         curvePoints = new Vector3[resolution];
         rightPoints = new Vector3[resolution];
         leftPoints = new Vector3[resolution];
+        rightEdge = new Vector3[resolution];
+        leftEdge = new Vector3[resolution];
         midRLanePoints = new Vector3[resolution];
         sampledFittedBezierR = new Vector3[resolution];
         sampledFittedBezierL = new Vector3[resolution];
@@ -170,7 +175,7 @@ public class BezierCurveGroup : MonoBehaviour
 
         // define the normal vertical vector for the complete 2d curve
         Vector3 normal = new Vector3(0, 1, 0);
-
+        float padding = 1.04f;
 
         // CALCULATE EUQIDISTANT LINES LEFT AND RIGHT OF THE BEZIER CURVE
         // for each sampled curve point, create the opposing cross products to obtain points left and right of the curve
@@ -185,13 +190,18 @@ public class BezierCurveGroup : MonoBehaviour
             // intermediary points
             else curveVector = curvePoints[i + 1] - curvePoints[i];
 
+
             // calculate cross product of normal and the normalized curve vector and add start posistion to it
             Vector3 xProductRight = roadScaling * Vector3.Cross(normal, curveVector.normalized) + curvePoints[i];  // Unity is left-hand
-            Vector3 xProductMidRightLane = 0.5f * roadScaling * Vector3.Cross(normal, curveVector.normalized) + curvePoints[i];  // Unity is left-hand
+            Vector3 xProductRightEdge = padding * roadScaling * Vector3.Cross(normal, curveVector.normalized) + curvePoints[i];
+            Vector3 xProductMidRightLane = 0.5f * roadScaling * Vector3.Cross(normal, curveVector.normalized) + curvePoints[i];
             Vector3 xProductLeft = roadScaling * Vector3.Cross(curveVector.normalized, normal) + curvePoints[i];
+            Vector3 xProductLeftEdge = padding * roadScaling * Vector3.Cross(curveVector.normalized, normal) + curvePoints[i];
 
             rightPoints[i] = xProductRight;
             leftPoints[i] = xProductLeft;
+            rightEdge[i] = xProductRightEdge;
+            leftEdge[i] = xProductLeftEdge;
             midRLanePoints[i] = xProductMidRightLane;
         }
 
@@ -286,6 +296,8 @@ public class BezierCurveGroup : MonoBehaviour
         DrawCurve(rightPoints, Color.cyan, radiusCurveSpheres, null);
         DrawCurve(leftPoints, Color.cyan, radiusCurveSpheres, null);
         DrawCurve(midRLanePoints, Color.magenta, radiusCurveSpheres, null);
+        DrawCurve(rightEdge, Color.white, radiusCurveSpheres, null);
+        DrawCurve(leftEdge, Color.white, radiusCurveSpheres, null);
 
         // draw the sampled right twin Bezier curve 
         DrawCurve(sampledFittedBezierL, Color.blue, radiusCurveSpheres, leftPoints);
@@ -603,8 +615,8 @@ public class BezierCurveGroup : MonoBehaviour
         return (knots, lowestError);
     }
 
-    public Vector3[] GetLeftPoints() => leftPoints;  // for debugging, sampledFittedBezierL;
-    public Vector3[] GetRightPoints() => rightPoints;  // debugging, sampledFittedBezierR;
+    public Vector3[] GetLeftPoints() => leftEdge;  // leftPoints;  // for debugging, sampledFittedBezierL;
+    public Vector3[] GetRightPoints() => rightEdge;  // rightPoints;  // debugging, sampledFittedBezierR;
 
     public Vector3[] GetControlPoints() => new Vector3[] { pl_0, pl_1, pl_2, pl_3, pr_0, pr_1, pr_2, pr_3 };
 
