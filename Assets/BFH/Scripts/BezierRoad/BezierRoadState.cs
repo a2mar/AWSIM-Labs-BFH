@@ -3,6 +3,7 @@
 
 using UnityEngine;
 
+[System.Serializable]
 public class BezierRoadState
 {
     // Bezier Vectors [row][col], each row defines the BezierKnots for a cubic bezier curve.
