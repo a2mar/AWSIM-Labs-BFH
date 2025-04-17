@@ -7,8 +7,10 @@ public class CamRoadTrigger : RoadTrigger
         Debug.Log($"[Cam Trigger] {triggerCatcher.name} car detected: {triggeringObject.name}");
 
         // Check the root object or look upward
-        // CarAgent agent = triggeringObject.GetComponentInParent<CarAgent>();
+        // CameraCapture cam = triggeringObject.GetComponentInParent<CameraCapture>();
+        CameraCapture cam = triggeringObject.transform.parent?.parent?.GetComponentInChildren<CameraCapture>();
 
+        if (cam != null) Debug.Log("found the cam");
         // if (agent != null)
         // {
         //     agent.GetStatsRecorder().Add("Collisions", 1, StatAggregationMethod.Sum);
