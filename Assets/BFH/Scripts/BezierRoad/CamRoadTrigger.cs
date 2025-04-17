@@ -4,7 +4,7 @@ public class CamRoadTrigger : RoadTrigger
 {
     public override void OnRoadTriggerEnter(GameObject triggeringObject, GameObject triggerCatcher, bool positive)
     {
-        Debug.Log($"[Edge] {triggerCatcher.name}{this.GetIndex()} Off-road detected: {triggeringObject.name}");
+        Debug.Log($"[Cam Trigger] {triggerCatcher.name} car detected: {triggeringObject.name}");
 
         // Check the root object or look upward
         // CarAgent agent = triggeringObject.GetComponentInParent<CarAgent>();

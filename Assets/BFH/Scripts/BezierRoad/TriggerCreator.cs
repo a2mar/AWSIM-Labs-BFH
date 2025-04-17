@@ -63,7 +63,7 @@ public class TriggerCreator
 
 
         int trigIdx = index;
-        int arrayIdx = leftPoints.Length - 2;
+        int arrayIdx = leftPoints.Length - 4;
         triggerScriptCam.CreateTrigger(leftPoints[arrayIdx], rightPoints[arrayIdx], heightOffset, trigIdx, $"CamTrigger{trigIdx}");
         
 

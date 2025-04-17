@@ -60,7 +60,7 @@ public class BezierRoadManager : MonoBehaviour
     private bool initialized;
 
     // // for RL
-    // private TriggerCreator[] triggerCreators;
+    private TriggerCreator[] triggerCreators;
 
     void Awake()
     {
@@ -91,6 +91,8 @@ public class BezierRoadManager : MonoBehaviour
         BezierRoadGeometry.InitializeBezierKnots(roadState);
         // generate the initial road mesh
         UpdateRoadMesh();
+        // generate the trigger colliders
+        GenerateTriggerColliders();
         // set initialized to true
         initialized = true;
 
@@ -156,6 +158,8 @@ public class BezierRoadManager : MonoBehaviour
         SaveState();
         // generate the initial road mesh
         UpdateRoadMesh();
+        // generate the trigger colliders
+        GenerateTriggerColliders();
     }
 
     private void GenerateRandomRoadPolygon()
@@ -240,6 +244,32 @@ public class BezierRoadManager : MonoBehaviour
         }
         // float duration = Time.realtimeSinceStartup - start;
         // Debug.LogError($"Approximation took {duration * 1000f} ms");
+    }
+
+    void GenerateTriggerColliders()
+    {
+        if (triggerCreators == null)  // CREATE NEW
+        {
+            // initialize Array
+            triggerCreators = new TriggerCreator[segmentCount];
+
+            for (int i = 0; i < segmentCount; i++)
+            {
+                // initialize Trigger Creators
+                triggerCreators[i] = new TriggerCreator(i);
+                // create Trigger Colliders
+                triggerCreators[i].CreateTriggerColliders(roadState);
+            }
+        }
+        else  // UPDATE
+        {
+            for (int i = 0; i < segmentCount; i++)
+            {
+                // update trigger colliders
+                triggerCreators[i].CreateTriggerColliders(roadState);
+            }
+        }
+
     }
 
     /// <summary>
